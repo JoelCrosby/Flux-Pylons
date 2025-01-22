@@ -2,6 +2,7 @@ package com.joelcrosby.fluxpylons.pylon.network.graph;
 
 import com.joelcrosby.fluxpylons.pylon.network.PylonNetwork;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -21,7 +22,7 @@ public class PylonGraph {
         this.nodeType = nodeType;
     }
 
-    public PylonGraphScannerResult scan(Level originLevel, BlockPos originPos) {
+    public PylonGraphScannerResult scan(ServerLevel originLevel, BlockPos originPos) {
         var scanner = new PylonGraphScanner(nodes, this.nodeType);
         var result = scanner.scanAt(originLevel, originPos);
 
@@ -70,7 +71,7 @@ public class PylonGraph {
     }
 
     public static double distanceTo(BlockPos aPos, BlockPos bPos) {
-        double dx = aPos.getX() - bPos.getX();             
+        double dx = aPos.getX() - bPos.getX();
         double dy = aPos.getY() - bPos.getY();             
         double dz = aPos.getZ() - bPos.getZ();
         

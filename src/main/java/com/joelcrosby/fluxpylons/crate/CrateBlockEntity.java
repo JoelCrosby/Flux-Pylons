@@ -3,7 +3,7 @@ package com.joelcrosby.fluxpylons.crate;
 import com.joelcrosby.fluxpylons.FluxPylons;
 import com.joelcrosby.fluxpylons.FluxPylonsBlockEntities;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
@@ -14,28 +14,25 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandlerModifiable;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.wrapper.InvWrapper;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.wrapper.InvWrapper;
 import org.jetbrains.annotations.Nullable;
 
 public class CrateBlockEntity extends BlockEntity implements Container, MenuProvider {
 
     private final static int SIZE = 54;
-    
+
     public final ItemStackHandler items = new ItemStackHandler(SIZE) {
         @Override
         protected void onContentsChanged(int slot) {
             super.onContentsChanged(slot);
-            
+
             setChanged();
         }
     };
-    
-    private LazyOptional<IItemHandlerModifiable> handler;
+
+    private IItemHandlerModifiable handler;
 
     public CrateBlockEntity(BlockPos pos, BlockState state) {
         super(FluxPylonsBlockEntities.CRATE.get(), pos, state);
@@ -51,7 +48,7 @@ public class CrateBlockEntity extends BlockEntity implements Container, MenuProv
     public AbstractContainerMenu createMenu(int window, Inventory inventory, Player player) {
         return new CrateContainerMenu(window, player, worldPosition);
     }
-    
+
     @Override
     public int getContainerSize() {
         return SIZE;
@@ -61,10 +58,10 @@ public class CrateBlockEntity extends BlockEntity implements Container, MenuProv
     public boolean isEmpty() {
         for (var i = 0; i < items.getSlots(); i++) {
             var inSlot = items.getStackInSlot(i);
-            
+
             if (!inSlot.isEmpty()) return false;
         }
-        
+
         return true;
     }
 
@@ -100,25 +97,15 @@ public class CrateBlockEntity extends BlockEntity implements Container, MenuProv
     }
 
     @Override
-    public void saveAdditional(CompoundTag compound) {
-        super.saveAdditional(compound);
-        compound.put("extractItems", this.items.serializeNBT());
+    public void saveAdditional(CompoundTag compound, HolderLookup.Provider provider) {
+        super.saveAdditional(compound, provider);
+        compound.put("extractItems", this.items.serializeNBT(provider));
     }
 
     @Override
-    public void load(CompoundTag compound) {
-        this.items.deserializeNBT(compound.getCompound("extractItems"));
-        super.load(compound);
-    }
-
-    @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-        if (!this.remove && cap == ForgeCapabilities.ITEM_HANDLER) {
-            if (this.handler == null)
-                this.handler = LazyOptional.of(this::createHandler);
-            return this.handler.cast();
-        }
-        return super.getCapability(cap, side);
+    public void loadAdditional(CompoundTag compound, HolderLookup.Provider provider) {
+        this.items.deserializeNBT(provider, compound.getCompound("extractItems"));
+        super.loadAdditional(compound, provider);
     }
 
     private IItemHandlerModifiable createHandler() {

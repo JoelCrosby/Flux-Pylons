@@ -1,9 +1,9 @@
 package com.joelcrosby.fluxpylons.container;
 
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.SlotItemHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
 
 import javax.annotation.Nullable;
 
@@ -16,9 +16,11 @@ public class BaseEnergySlot extends SlotItemHandler {
     public int getMaxStackSize() {
         return 1;
     }
-    
+
     @Override
-    public boolean mayPlace(@Nullable ItemStack stack){
-        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+    public boolean mayPlace(@Nullable ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+
+        return stack.getCapability(Capabilities.EnergyStorage.ITEM) != null;
     }
 }

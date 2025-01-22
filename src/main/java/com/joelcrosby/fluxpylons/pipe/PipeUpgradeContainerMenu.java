@@ -8,8 +8,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.SlotItemHandler;
+import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class PipeUpgradeContainerMenu extends BaseContainerMenu {
@@ -26,7 +26,7 @@ public class PipeUpgradeContainerMenu extends BaseContainerMenu {
         super(FluxPylonsContainerMenus.PIPE_UPGRADE_CONTAINER_MENU.get(), id, player);
         this.itemStackHandler = itemStackHandler;
         this.pipeIoMode = pipeIoMode;
-        this.upgradeManager = player.level.isClientSide() ? null : NetworkManager.get(player.level).getNode(pos).getUpgradeManager(dir);
+        this.upgradeManager = player.level().isClientSide() ? null : NetworkManager.get(player.level()).getNode(pos).getUpgradeManager(dir);
 
         this.addOwnSlots();
         this.addPlayerInventory();
@@ -45,20 +45,20 @@ public class PipeUpgradeContainerMenu extends BaseContainerMenu {
     @Override
     public ItemStack quickMoveStack(Player player, int slotIndex) {
         var itemStack = super.quickMoveStack(player, slotIndex);
-        
+
         if (this.upgradeManager != null) {
             this.upgradeManager.pipeUpgradeContainer.setChanged();
         }
-        
+
         return itemStack;
     }
 
     protected void addOwnSlots() {
         var off = 18 * 2;
         var y = 18;
-        
+
         var slot = -1;
-        
+
         for (var i = 0; i < this.itemStackHandler.getSlots() / 5; i++) {
             for (var j = 0; j < 5; j++) {
                 slot++;

@@ -1,34 +1,34 @@
 package com.joelcrosby.fluxpylons.network.packets;
 
+import com.joelcrosby.fluxpylons.FluxPylons;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.common.BaseFilterItem;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.function.Supplier;
 
-public class PacketOpenScreen {
-    private final int slotNumber;
+public record PacketOpenScreen(int slotNumber) implements CustomPacketPayload {
 
-    public PacketOpenScreen(int slotNumber) {
-        this.slotNumber = slotNumber;
-    }
+    public static final CustomPacketPayload.Type<PacketOpenScreen> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "open_screen"));
 
-    public static void encode(PacketOpenScreen msg, FriendlyByteBuf buffer) {
-        buffer.writeInt(msg.slotNumber);
-    }
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketOpenScreen> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, PacketOpenScreen::slotNumber,
+            PacketOpenScreen::new);
 
-    public static PacketOpenScreen decode(FriendlyByteBuf buffer) {
-        return new PacketOpenScreen(buffer.readInt());
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
     public static class Handler {
-        public static void handle(PacketOpenScreen msg, Supplier<NetworkEvent.Context> ctx) {
-            ctx.get().enqueueWork(() -> {
-                var sender = ctx.get().getSender();
-                if (sender == null) return;
+        public static void handle(PacketOpenScreen msg, IPayloadContext ctx) {
+            ctx.enqueueWork(() -> {
+                var sender = ctx.player();
 
                 var container = sender.containerMenu;
-                if (container == null) return;
 
                 var slot = container.slots.get(msg.slotNumber);
                 var stack = slot.getItem();
@@ -38,8 +38,6 @@ public class PacketOpenScreen {
                     filterItem.openGui(sender, stack);
                 }
             });
-
-            ctx.get().setPacketHandled(true);
         }
     }
 }

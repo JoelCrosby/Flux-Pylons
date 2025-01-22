@@ -6,57 +6,54 @@ import com.joelcrosby.fluxpylons.machine.common.MachineCapabilityHandler;
 import com.joelcrosby.fluxpylons.machine.common.MachineFluidHandler;
 import com.joelcrosby.fluxpylons.machine.common.MachineItemStackHandler;
 import com.joelcrosby.fluxpylons.recipe.WasherRecipe;
-import com.joelcrosby.fluxpylons.recipe.common.BaseRecipe;
+import com.joelcrosby.fluxpylons.recipe.common.RecipeInputContainer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.Container;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
+
 public class WasherBlockEntity extends MachineBlockEntity {
-    
+
     private final MachineCapabilityHandler capabilityHandler = new MachineCapabilityHandler() {
         private final MachineItemStackHandler inventory = new MachineItemStackHandler(1, 2, true);
-        private final LazyOptional<MachineItemStackHandler> inventoryHandler = LazyOptional.of(() -> inventory);
-        
+
         private final MachineFluidHandler fluidInventory = new MachineFluidHandler(1, 0) {
             @Override
             public boolean isFluidValid(int tank, FluidStack stack) {
-                var name = ForgeRegistries.FLUIDS.getKey(stack.getFluid()).getPath();
+                var name = BuiltInRegistries.FLUID.getKey(stack.getFluid()).getPath();
                 return name.equals("water");
             }
         };
-        private final LazyOptional<MachineFluidHandler> fluidInventoryHandler = LazyOptional.of(() -> fluidInventory);
-        
-        @Nullable
+
         @Override
         public MachineItemStackHandler items() {
             return inventory;
         }
 
         @Override
-        public LazyOptional<MachineItemStackHandler> itemHandler() {
-            return inventoryHandler;
+        public Optional<MachineItemStackHandler> itemHandler() {
+            return Optional.of(inventory);
         }
 
-        @Nullable
         @Override
         public MachineFluidHandler fluids() {
             return fluidInventory;
         }
 
         @Override
-        public LazyOptional<MachineFluidHandler> fluidHandler() {
-            return fluidInventoryHandler;
+        public Optional<MachineFluidHandler> fluidHandler() {
+            return Optional.of(fluidInventory);
         }
     };
-    
+
     public WasherBlockEntity(BlockPos pos, BlockState state) {
         super(FluxPylonsBlockEntities.WASHER.get(), pos, state);
     }
@@ -65,16 +62,16 @@ public class WasherBlockEntity extends MachineBlockEntity {
     public MachineCapabilityHandler getCapabilityHandler() {
         return capabilityHandler;
     }
-    
+
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int window, Inventory inventory, Player player) {
         return new WasherContainerMenu(window, player, worldPosition);
     }
-    
+
     @Override
-    public BaseRecipe getRecipe(Level level, Container container) {
-        return WasherRecipe.getRecipe(level, container);
+    public WasherRecipe getRecipe(Level level, RecipeInputContainer input) {
+        return WasherRecipe.getRecipe(level, input);
     }
 
     public FluidStack getFluidStack() {

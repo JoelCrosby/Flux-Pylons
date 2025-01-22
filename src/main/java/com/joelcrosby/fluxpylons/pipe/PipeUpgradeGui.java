@@ -3,24 +3,19 @@ package com.joelcrosby.fluxpylons.pipe;
 import com.joelcrosby.fluxpylons.FluxPylons;
 import com.joelcrosby.fluxpylons.gui.BasicButton;
 import com.joelcrosby.fluxpylons.gui.ToggleButton;
-import com.joelcrosby.fluxpylons.network.PacketHandler;
 import com.joelcrosby.fluxpylons.network.packets.PacketOpenScreen;
 import com.joelcrosby.fluxpylons.network.packets.PacketUpdatePipeManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
+import net.neoforged.neoforge.network.PacketDistributor;
 
-import java.util.Optional;
 
 public class PipeUpgradeGui extends AbstractContainerScreen<PipeUpgradeContainerMenu> {
-    private static final ResourceLocation TEXTURE = new ResourceLocation(FluxPylons.ID, "textures/gui/pipe.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/pipe.png");
     private final PipeUpgradeContainerMenu container;
 
     private PipeIoMode ioMode;
@@ -38,10 +33,10 @@ public class PipeUpgradeGui extends AbstractContainerScreen<PipeUpgradeContainer
         super.init();
 
         var ioModeTextures = new ResourceLocation[] {
-                new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_insert_extract.png"),
-                new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_insert.png"),
-                new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_extract.png"),
-                new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_side_off.png"),
+                ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_insert_extract.png"),
+                ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_insert.png"),
+                ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_extract.png"),
+                ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_side_off.png"),
         };
 
         var ioModeTooltips = new String[] {
@@ -69,60 +64,60 @@ public class PipeUpgradeGui extends AbstractContainerScreen<PipeUpgradeContainer
     }
 
     @Override
-    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
-        super.render(poseStack, mouseX, mouseY, partialTicks);
+    public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTicks) {
+        super.render(gui, mouseX, mouseY, partialTicks);
 
         this.renderables.stream()
                 .filter(widget -> widget instanceof BasicButton)
-                .forEach(widget -> ((BasicButton) widget).onRenderToolTip(poseStack, mouseX, mouseY));
+                .forEach(widget -> ((BasicButton) widget).onRenderToolTip(gui, mouseX, mouseY));
     }
     
     @Override
-    protected void renderBg(PoseStack poseStack, float partialTicks, int mouseX, int mouseY) {
-        renderBackground(poseStack);
-        
+    protected void renderBg(GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.setShaderTexture(0, TEXTURE);
 
-        this.blit(poseStack, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
     }
 
     @Override
-    protected void renderLabels(PoseStack poseStack, int mouseX, int mouseY) {
-        this.font.draw(poseStack, this.playerInventoryTitle.getString(), 8, this.imageHeight - 96 + 2, 4210752);
-        this.font.draw(poseStack, this.title.getString(), 8, 6, 4210752);
+    protected void renderLabels(GuiGraphics gui, int mouseX, int mouseY) {
+        gui.drawString(this.font, this.playerInventoryTitle.getString(), 8, this.imageHeight - 96 + 2, 4210752, false);
+        gui.drawString(this.font, this.title.getString(), 8, 6, 4210752, false);
 
-        renderTooltip(poseStack, mouseX - leftPos, mouseY - topPos);
+        renderTooltip(gui, mouseX - leftPos, mouseY - topPos);
     }
 
     @Override
     public boolean mouseClicked(double x, double y, int btn) {
         if (btn == 1 && hoveredSlot != null) {
             var slot = hoveredSlot.getSlotIndex();
-            PacketHandler.sendToServer(new PacketOpenScreen(slot));
+            PacketDistributor.sendToServer(new PacketOpenScreen(slot));
             return true;
         }
         
         return super.mouseClicked(x, y, btn);
     }
 
-    @Override
-    protected void renderTooltip(PoseStack poseStack, ItemStack itemStack, int mouseX, int mouseY) {
-        if (mouseY > this.imageHeight - 96 + 2 || mouseX > this.imageWidth - 8 - 36) {
-            super.renderTooltip(poseStack, itemStack, mouseX, mouseY);
-            return;
-        } 
-        
-        var components = itemStack.getTooltipLines(minecraft.player, TooltipFlag.Default.NORMAL);
-        components.add(Component.translatable(""));
-        components.add(Component.translatable("item.fluxpylons.filter.tooltip.open-menu").setStyle(Style.EMPTY.applyFormat(ChatFormatting.DARK_GRAY)));
-        
-        renderTooltip(poseStack, components, Optional.empty(), mouseX, mouseY); 
-    }
+    // TODO: Fix tooltips
+
+//    @Override
+//    protected void renderTooltip(GuiGraphics gui, ItemStack itemStack, int mouseX, int mouseY) {
+//        if (mouseY > this.imageHeight - 96 + 2 || mouseX > this.imageWidth - 8 - 36) {
+//            super.renderTooltip(gui, itemStack, mouseX, mouseY);
+//            return;
+//        }
+//
+//        var components = itemStack.getTooltipLines(minecraft.player, TooltipFlag.Default.NORMAL);
+//        components.add(Component.translatable(""));
+//        components.add(Component.translatable("item.fluxpylons.filter.tooltip.open-menu").setStyle(Style.EMPTY.applyFormat(ChatFormatting.DARK_GRAY)));
+//
+//        renderTooltip(gui, components, Optional.empty(), mouseX, mouseY);
+//    }
 
     @Override
     public void onClose() {
-        PacketHandler.sendToServer(new PacketUpdatePipeManager(ioMode));
+        PacketDistributor.sendToServer(new PacketUpdatePipeManager(ioMode));
         super.onClose();
     }
 }

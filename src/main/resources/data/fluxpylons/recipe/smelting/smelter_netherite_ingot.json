@@ -1,0 +1,20 @@
+{
+  "type": "fluxpylons:smelting",
+  "ingredients": [
+    {
+      "item": "minecraft:gold_ingot",
+      "count": 4
+    },
+    {
+      "item": "minecraft:netherite_scrap",
+      "count": 4
+    }
+  ],
+  "result": [
+    {
+      "item": "minecraft:netherite_ingot",
+      "count": 1
+    }
+  ],
+  "energy": 9600
+}

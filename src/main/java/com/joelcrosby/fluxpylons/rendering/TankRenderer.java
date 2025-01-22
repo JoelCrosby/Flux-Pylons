@@ -1,17 +1,18 @@
 package com.joelcrosby.fluxpylons.rendering;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.textures.FluidSpriteCache;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nullable;
 
@@ -22,12 +23,12 @@ public class TankRenderer {
 
         renderGuiTank(stack, tankCapacity, x, y, zLevel, width, height);
     }
-    
+
     public static void renderGuiTank(FluidStack stack, int tankCapacity, double x, double y, double zLevel, double width, double height) {
         // Originally Adapted from Ender IO by Silent's Mechanisms
         int amount;
         try {
-            if (stack.getFluid() == null || stack.isEmpty()) {
+            if (stack.isEmpty()) {
                 return;
             }
         } catch (Exception e) {
@@ -40,16 +41,18 @@ public class TankRenderer {
             amount = 0;
         }
 
-        var icon = getFluidTexture(stack);
-        if (icon == null) {
+        var sprite = getFluidTexture(stack);
+        if (sprite == null) {
             return;
         }
 
         var renderAmount = (int) Math.max(Math.min(height, amount * height / tankCapacity), 1);
         var posY = (int) (y + height - renderAmount);
 
-        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+        RenderSystem.setShaderTexture(0, InventoryMenu.BLOCK_ATLAS);
+
         var color = IClientFluidTypeExtensions.of(stack.getFluid()).getTintColor();
+
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -66,19 +69,27 @@ public class TankRenderer {
                 var drawX = (int) (x + i);
                 var drawY = posY + j;
 
-                var minU = icon.getU0(); // min
-                var maxU = icon.getU1(); // max
-                var minV = icon.getV0(); // min
-                var maxV = icon.getV1(); // max
+                var minU = sprite.getU0(); // min
+                var maxU = sprite.getU1(); // max
+                var minV = sprite.getV0(); // min
+                var maxV = sprite.getV1(); // max
 
-                var tessellator = Tesselator.getInstance();
-                var tes = tessellator.getBuilder();
-                tes.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-                tes.vertex(drawX, drawY + drawHeight, 0).uv(minU, minV + (maxV - minV) * drawHeight / 16F).endVertex();
-                tes.vertex(drawX + drawWidth, drawY + drawHeight, 0).uv(minU + (maxU - minU) * drawWidth / 16F, minV + (maxV - minV) * drawHeight / 16F).endVertex();
-                tes.vertex(drawX + drawWidth, drawY, 0).uv(minU + (maxU - minU) * drawWidth / 16F, minV).endVertex();
-                tes.vertex(drawX, drawY, 0).uv(minU, minV).endVertex();
-                tessellator.end();
+                var buffer = Tesselator.getInstance()
+                        .begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+                buffer.addVertex(drawX, drawY + drawHeight, 0)
+                        .setUv(minU, minV + (maxV - minV) * drawHeight / 16F);
+                buffer.addVertex(drawX + drawWidth, drawY + drawHeight, 0)
+                        .setUv(minU + (maxU - minU) * drawWidth / 16F, minV + (maxV - minV) * drawHeight / 16F);
+                buffer.addVertex(drawX + drawWidth, drawY, 0)
+                        .setUv(minU + (maxU - minU) * drawWidth / 16F, minV);
+                buffer.addVertex(drawX, drawY, 0)
+                        .setUv(minU, minV);
+
+                var mesh = buffer.build();
+                if (mesh != null) {
+                    BufferUploader.drawWithShader(mesh);
+                }
+
             }
         }
 
@@ -88,7 +99,7 @@ public class TankRenderer {
 
     @Nullable
     public static TextureAtlasSprite getFluidTexture(FluidStack stack) {
-        var sprites = ForgeHooksClient.getFluidSprites(Minecraft.getInstance().level, BlockPos.ZERO, stack.getFluid().defaultFluidState());
+        var sprites = FluidSpriteCache.getFluidSprites(Minecraft.getInstance().level, BlockPos.ZERO, stack.getFluid().defaultFluidState());
         return sprites.length > 0 ? sprites[0] : null;
     }
 }

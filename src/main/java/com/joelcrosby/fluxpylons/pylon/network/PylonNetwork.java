@@ -4,10 +4,10 @@ import com.joelcrosby.fluxpylons.energy.FluxEnergyStorage;
 import com.joelcrosby.fluxpylons.pylon.network.graph.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.energy.IEnergyStorage;
 
 import java.util.List;
 
@@ -16,35 +16,33 @@ public class PylonNetwork {
 
     private BlockPos originPos;
     private boolean didDoInitialScan;
-    
+
     private final FluxEnergyStorage storage;
-    private final LazyOptional<IEnergyStorage> lazyStorage;
-    
-    private final Level level;
-    
+
+    private final ServerLevel level;
+
     private final String id;
     private final PylonGraphNodeType nodeType;
 
-    public PylonNetwork(String id, BlockPos originPos, Level level, PylonGraphNodeType nodeType) {
+    public PylonNetwork(String id, BlockPos originPos, ServerLevel level, PylonGraphNodeType nodeType) {
         this.id = id;
         this.level = level;
         this.nodeType = nodeType;
         this.graph = new PylonGraph(this, this.nodeType);
 
         this.storage = new FluxEnergyStorage(nodeType.getCapacity(), nodeType.getEnergyTransferRate(), nodeType.getEnergyTransferRate());
-        this.lazyStorage = LazyOptional.of(() -> this.storage);
-        
+
         this.setOriginPos(originPos);
     }
 
     public String getId() {
         return id;
     }
-    
+
     public Level getLevel() {
         return level;
     }
-    
+
     public void setOriginPos(BlockPos originPos) {
         this.originPos = originPos;
     }
@@ -54,11 +52,11 @@ public class PylonNetwork {
         tag.putLong("origin", originPos.asLong());
         tag.putInt("energy", storage.getEnergyStored());
         tag.putInt("type", nodeType.ordinal());
-        
+
         return tag;
     }
 
-    public static PylonNetwork fromNBT(Level level, CompoundTag nbt) {
+    public static PylonNetwork fromNBT(ServerLevel level, CompoundTag nbt) {
         var networkBlockPos = BlockPos.of(nbt.getLong("origin"));
         var networkId = nbt.getString("id");
         var nodeTypeValue = nbt.getInt("type");
@@ -66,12 +64,12 @@ public class PylonNetwork {
         var network = new PylonNetwork(networkId, networkBlockPos, level, nodeType);
 
         network.storage.setEnergyStored(nbt.getInt("energy"));
-        
+
         return network;
     }
-    
-    public LazyOptional<IEnergyStorage> GetEnergyStorage() {
-        return lazyStorage;
+
+    public IEnergyStorage GetEnergyStorage() {
+        return storage;
     }
 
     public PylonGraphNode getNode(BlockPos pos) {
@@ -85,35 +83,35 @@ public class PylonNetwork {
     public List<PylonGraphDestination> getRelativeDestinations(PylonGraphDestinationType type, BlockPos pos) {
         return graph.getRelativeDestinations(type, pos);
     }
-    
-    public PylonGraphScannerResult scanGraph(Level level, BlockPos pos) {
+
+    public PylonGraphScannerResult scanGraph(ServerLevel level, BlockPos pos) {
         var result =  graph.scan(level, pos);
 
         var firstNode = result.foundNodes().stream().findFirst();
-        
+
         if (firstNode.isEmpty()) {
             return result;
         }
 
         this.storage.setCapacity(result.foundNodes().size() * this.nodeType.getCapacity());
-        
+
         return result;
     }
 
     public void onMergedWith(PylonNetwork mainNetwork) {
         var mainEnergy = mainNetwork.storage.getEnergyStored();
         var mergedEnergy = storage.getEnergyStored();
-        
+
         mainNetwork.storage.setEnergyStored(mainEnergy + mergedEnergy);
     }
 
-    public void update(Level level) {
+    public void update(ServerLevel level) {
         if (!didDoInitialScan) {
             didDoInitialScan = true;
 
             scanGraph(level, originPos);
         }
-        
+
         updateEnergy();
     }
 
@@ -131,12 +129,12 @@ public class PylonNetwork {
             }
 
             var side = destination.incomingDirection().getOpposite();
-            var energyHandler = blockEntity.getCapability(ForgeCapabilities.ENERGY, side).orElse(null);
+            var energyHandler = level.getCapability(Capabilities.EnergyStorage.BLOCK, blockEntity.getBlockPos(), null, blockEntity, side);
 
             if (energyHandler == null) {
                 continue;
             }
-            
+
             if (!energyHandler.canReceive()) {
                 continue;
             }

@@ -2,12 +2,13 @@ package com.joelcrosby.fluxpylons.pipe.network.graph;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 
 public class GraphScannerRequest {
-    private final Level level;
+    private final ServerLevel level;
     private final BlockPos pos;
     private boolean successful;
     
@@ -17,14 +18,14 @@ public class GraphScannerRequest {
     @Nullable
     private final GraphScannerRequest parent;
     
-    public GraphScannerRequest(Level level, BlockPos pos, @Nullable Direction direction, @Nullable GraphScannerRequest parent) {
+    public GraphScannerRequest(ServerLevel level, BlockPos pos, @Nullable Direction direction, @Nullable GraphScannerRequest parent) {
         this.level = level;
         this.pos = pos;
         this.direction = direction;
         this.parent = parent;
     }
 
-    public Level getLevel() {
+    public ServerLevel getLevel() {
         return level;
     }
 

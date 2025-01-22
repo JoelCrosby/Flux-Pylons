@@ -6,6 +6,7 @@ import com.joelcrosby.fluxpylons.pipe.network.graph.GraphNode;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphNodeType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -23,11 +24,11 @@ public class NetworkManager extends SavedData {
     private static final String NAME = FluxPylons.ID + "_networks";
     private static final Logger LOGGER = LogManager.getLogger(NetworkManager.class);
     
-    private final Level level;
     private final HashMap<String, Network> networks = new HashMap<>();
     private final HashMap<BlockPos, GraphNode> nodes = new HashMap<>();
+    private final ServerLevel level;
 
-    public NetworkManager(Level level) {
+    public NetworkManager(ServerLevel level) {
         this.level = level;
     }
 
@@ -36,11 +37,14 @@ public class NetworkManager extends SavedData {
     }
 
     public static NetworkManager get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent((tag) -> {
-            var networkManager = new NetworkManager(level);
-            networkManager.load(tag);
-            return networkManager;
-        }, () -> new NetworkManager(level), NAME);
+        return level.getDataStorage().computeIfAbsent(new Factory<>(
+                        () -> new NetworkManager(level),
+                        (tag, provider) -> {
+                            var networkManager = new NetworkManager(level);
+                            networkManager.load(tag, provider, level);
+                            return networkManager;
+                        }),
+                NAME);
     }
 
     public void addNetwork(Network network) {
@@ -67,7 +71,7 @@ public class NetworkManager extends SavedData {
         setDirty();
     }
 
-    private void formNetworkAt(Level level, BlockPos pos, GraphNodeType nodeType) {
+    private void formNetworkAt(ServerLevel level, BlockPos pos, GraphNodeType nodeType) {
         var networkId = UUID.randomUUID().toString().substring(0, 8);
         var network = new Network(networkId, pos, level, nodeType);
 
@@ -77,7 +81,7 @@ public class NetworkManager extends SavedData {
         LOGGER.debug("Formed network at {}", pos);
     }
 
-    public void mergeNetworksIntoOne(Set<GraphNode> candidates, Level level, BlockPos pos) {
+    public void mergeNetworksIntoOne(Set<GraphNode> candidates, ServerLevel level, BlockPos pos) {
         if (candidates.isEmpty()) {
             throw new RuntimeException("Cannot merge networks: no candidates");
         }
@@ -272,12 +276,12 @@ public class NetworkManager extends SavedData {
         return networks.values();
     }
 
-    public void load(CompoundTag tag) {
+    public void load(CompoundTag tag, HolderLookup.Provider provider, ServerLevel level) {
         var nodeTags = tag.getList("nodes", Tag.TAG_COMPOUND);
         
         for (var nodeTag : nodeTags) {
             var nodeTagCompound = (CompoundTag) nodeTag;
-            var node = GraphNode.fromNbt(level, nodeTagCompound);
+            var node = GraphNode.fromNbt(level, nodeTagCompound, provider);
 
             this.nodes.put(node.getPos(), node);
         }
@@ -299,14 +303,14 @@ public class NetworkManager extends SavedData {
 
     @Override
     @NotNull
-    public CompoundTag save(CompoundTag tag) {
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
         var nodeTags = new ListTag();
         var networkTags = new ListTag();
 
         for (var node : this.nodes.values()) {
             var nodeTag = new CompoundTag();
             nodeTag.putString("id", node.getId().toString());
-            nodeTags.add(node.writeToNbt(nodeTag));
+            nodeTags.add(node.writeToNbt(nodeTag, provider));
         }
 
         for (var network : this.networks.values()) {

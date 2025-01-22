@@ -2,27 +2,30 @@ package com.joelcrosby.fluxpylons.recipe;
 
 import com.joelcrosby.fluxpylons.FluxPylonsRecipes;
 import com.joelcrosby.fluxpylons.recipe.common.BaseRecipe;
-import com.joelcrosby.fluxpylons.recipe.common.BaseRecipeSerializer;
-import com.joelcrosby.fluxpylons.recipe.common.RecipeData;
-import net.minecraft.world.Container;
-import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraft.world.item.crafting.RecipeType;
+import com.joelcrosby.fluxpylons.recipe.common.RecipeInputContainer;
+import com.joelcrosby.fluxpylons.recipe.common.RecipeItemData;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.fluids.crafting.FluidIngredient;
 
-import java.util.HashMap;
+import java.util.List;
+
+import static com.joelcrosby.fluxpylons.recipe.common.RecipeCodecs.*;
 
 
-public class WasherRecipe extends BaseRecipe {
-    public static final BaseRecipeSerializer<WasherRecipe> SERIALIZER = new BaseRecipeSerializer<>(WasherRecipe::new);
+public class WasherRecipe extends BaseRecipe implements Recipe<RecipeInputContainer> {
     public static final RecipeType<WasherRecipe> RECIPE_TYPE = FluxPylonsRecipes.FluxPylonsRecipeTypes.WASHING.get();
 
-    public WasherRecipe(RecipeData data) {
-        super(data);
-    }
 
-    @Override
-    public RecipeSerializer<?> getSerializer() {
-        return new BaseRecipeSerializer<>(WasherRecipe::new);
+
+    public WasherRecipe(List<Ingredient> ingredients, List<FluidIngredient> fluidIngredients, List<RecipeItemData> outputItems, long energy) {
+        super(ingredients, fluidIngredients, outputItems, null, energy);
     }
 
     @Override
@@ -30,19 +33,55 @@ public class WasherRecipe extends BaseRecipe {
         return RECIPE_TYPE;
     }
 
-    protected static final HashMap<Integer, WasherRecipe> recipeHashMap = new HashMap<>();
-    
-    public static WasherRecipe getRecipe(Level level, Container container) {
+    public static final MapCodec<WasherRecipe> CODEC = RecordCodecBuilder.mapCodec(builder -> builder.group(
+                    Ingredient.LIST_CODEC_NONEMPTY
+                            .fieldOf("ingredients")
+                            .forGetter(e -> e.ingredients),
+                    FluidIngredient.LIST_CODEC
+                            .fieldOf("fluid_ingredients")
+                            .forGetter(e -> e.fluidIngredients),
+                    RECIPE_ITEM_CODEC.listOf().fieldOf("result").forGetter(e -> e.outputItems),
+                    Codec.LONG.fieldOf("energy").forGetter(e -> e.energy))
+            .apply(builder, WasherRecipe::new));
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, WasherRecipe> STREAM_CODEC = StreamCodec.composite(
+            Ingredient.CONTENTS_STREAM_CODEC.apply(ByteBufCodecs.list()), WasherRecipe::getIngredients,
+            FluidIngredient.STREAM_CODEC.apply(ByteBufCodecs.list()), WasherRecipe::getFluidIngredients,
+            RECIPE_ITEM_LIST_STREAM_CODEC, WasherRecipe::getOutputItems,
+            ByteBufCodecs.VAR_LONG, WasherRecipe::getEnergy,
+            WasherRecipe::new
+    );
+
+    public static WasherRecipe getRecipe(Level level, RecipeInputContainer input) {
             for (var recipe : level.getRecipeManager().getRecipes()) {
-                if (recipe instanceof WasherRecipe washerRecipe) {
-                    if (washerRecipe.matches(container, level)) {
-                        var hash = container.hashCode();
+                if (recipe.value() instanceof WasherRecipe washerRecipe) {
+                    if (washerRecipe.matches(input, level)) {
+                        var hash = input.hashCode();
                         recipeHashMap.put(hash, washerRecipe);
                     }
                 }
             }
 
-        var hash = container.hashCode();
+        var hash = input.hashCode();
         return recipeHashMap.get(hash);
+    }
+
+
+
+    @Override
+    public RecipeSerializer<?> getSerializer() {
+        return FluxPylonsRecipes.WASHING.get();
+    }
+
+    public static class Serializer implements RecipeSerializer<WasherRecipe> {
+        @Override
+        public MapCodec<WasherRecipe> codec() {
+            return CODEC;
+        }
+
+        @Override
+        public StreamCodec<RegistryFriendlyByteBuf, WasherRecipe> streamCodec() {
+            return STREAM_CODEC;
+        }
     }
 }

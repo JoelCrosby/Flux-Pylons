@@ -2,12 +2,13 @@ package com.joelcrosby.fluxpylons.pylon.network.graph;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 
 public class PylonGraphScannerRequest {
-    private final Level level;
+    private final ServerLevel level;
     private final BlockPos pos;
     private final boolean ignoreNodes;
     
@@ -22,7 +23,7 @@ public class PylonGraphScannerRequest {
     @Nullable
     private final PylonGraphScannerRequest parent;
 
-    public PylonGraphScannerRequest(Level level,
+    public PylonGraphScannerRequest(ServerLevel level,
                                     BlockPos pos,
                                     @Nullable Direction direction,
                                     @Nullable PylonGraphScannerRequest parent,
@@ -38,7 +39,7 @@ public class PylonGraphScannerRequest {
         this.ignoreNodes = ignoreNodes;
     }
 
-    public Level getLevel() {
+    public ServerLevel getLevel() {
         return level;
     }
 

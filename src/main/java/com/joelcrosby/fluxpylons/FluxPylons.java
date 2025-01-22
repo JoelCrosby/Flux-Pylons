@@ -1,31 +1,36 @@
 package com.joelcrosby.fluxpylons;
 
+import com.joelcrosby.fluxpylons.network.PacketHandler;
 import com.joelcrosby.fluxpylons.setup.Client;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+
+import com.joelcrosby.fluxpylons.setup.Common;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLLoader;
 
 @Mod(FluxPylons.ID)
 public class FluxPylons
 {
     public static final String ID = "fluxpylons";
 
-    public FluxPylons()
+    public FluxPylons(IEventBus bus)
     {
-        MinecraftForge.EVENT_BUS.register(this);
-
-        final var bus = FMLJavaModLoadingContext.get().getModEventBus();
+        FluxPylonsBlocks.BLOCKS.register(bus);
+        FluxPylonsBlockEntities.BLOCK_ENTITIES_REGISTRY.register(bus);
+        FluxPylonsItems.ITEM_REGISTRY.register(bus);
+        FluxPylonsContainerMenus.CONTAINERS.register(bus);
+        FluxPylonsDataComponents.DATA_COMPONENT_TYPE_DEFERRED_REGISTER.register(bus);
 
         FluxPylonsRecipes.RECIPE_SERIALIZERS.register(bus);
         FluxPylonsRecipes.FluxPylonsRecipeTypes.RECIPE_TYPES_REGISTRY.register(bus);
-        
-        FluxPylonsBlocks.BLOCKS_REGISTRY.register(bus);
-        FluxPylonsBlockEntities.BLOCK_ENTITIES_REGISTRY.register(bus);
-        FluxPylonsItems.ITEM_REGISTRY.register(bus);
-        FluxPylonsContainerMenus.CONTAINER_REGISTRY.register(bus);
-        
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> bus.addListener(Client::setup));
+
+        Common.CREATIVE_MODE_TABS.register(bus);
+
+        bus.addListener(PacketHandler::register);
+        bus.addListener(FluxPylonsCapabilities::registerCapabilities);
+
+        if (FMLLoader.getDist().isClient()) {
+            bus.addListener(Client::setup);
+        }
     }
 }

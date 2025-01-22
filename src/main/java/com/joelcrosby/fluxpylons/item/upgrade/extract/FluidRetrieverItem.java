@@ -5,13 +5,13 @@ import com.joelcrosby.fluxpylons.FluxPylonsContainerMenus;
 import com.joelcrosby.fluxpylons.Utility;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.common.BaseFilterItem;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.common.FluidFilterContainerMenu;
-import com.joelcrosby.fluxpylons.item.upgrade.filter.common.ItemFilterStackHandler;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphDestinationType;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphNode;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphNodeType;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -19,30 +19,23 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 
 public class FluidRetrieverItem extends BaseFilterItem {
 
     @Override
-    public ItemStackHandler getItemStackHandler(ItemStack stack) {
-        return new ItemFilterStackHandler(FluxPylonsContainerMenus.BaseFilterContainerSlots, stack);
-    }
-
-    @Override
-    protected boolean defaultsToDenyList() {
-        return true;
+    protected int getSlots() {
+        return FluxPylonsContainerMenus.BaseFilterContainerSlots;
     }
 
     @Override
     protected boolean supportsInteractionSide() {
         return true;
     }
-    
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand interactionHand) {
         var stack = player.getItemInHand(interactionHand);
@@ -55,12 +48,12 @@ public class FluidRetrieverItem extends BaseFilterItem {
     }
 
     public void openGui(Player player, ItemStack stack) {
-        var containerName = Component.translatable("container." + FluxPylons.ID + "." + ForgeRegistries.ITEMS.getKey(this).getPath());
+        var containerName = Component.translatable("container." + FluxPylons.ID + "." + BuiltInRegistries.ITEM.getKey(this).getPath());
 
-        NetworkHooks.openScreen((ServerPlayer) player,
+        player.openMenu(
                 new SimpleMenuProvider((windowId, playerInventory, playerEntity) ->
                         new FluidFilterContainerMenu(windowId, player, stack), containerName),
-                (buffer -> buffer.writeItem(stack))
+                (buffer -> ItemStack.STREAM_CODEC.encode(buffer, stack))
         );
     }
 
@@ -76,10 +69,15 @@ public class FluidRetrieverItem extends BaseFilterItem {
         var interactionDir = BaseFilterItem.getInteractionSide(itemStack);
 
         var handlerDir = interactionDir == null ? dir.getOpposite() : interactionDir;
-        
-        var fluidHandler = source
-                .getCapability(ForgeCapabilities.FLUID_HANDLER, handlerDir)
-                .orElse(null);
+
+        var capCache = BlockCapabilityCache.create(
+                Capabilities.FluidHandler.BLOCK,
+                level,
+                source.getBlockPos(),
+                handlerDir
+        );
+
+        var fluidHandler = capCache.getCapability();
 
         if (fluidHandler == null) return;
 
@@ -91,7 +89,7 @@ public class FluidRetrieverItem extends BaseFilterItem {
         Outer:
         for (var destination : destinations) {
             if (!destination.canExtract()) continue;
-            
+
             var destinationEntity = destination.getConnectedBlockEntity();
             if (destinationEntity == null) continue;
 
@@ -100,12 +98,18 @@ public class FluidRetrieverItem extends BaseFilterItem {
             }
 
             var incomingDirection = destination.incomingDirection().getOpposite();
-            var destinationHandler = destinationEntity
-                    .getCapability(ForgeCapabilities.FLUID_HANDLER, incomingDirection)
-                    .orElse(null);
+
+            var incomingCapCache = BlockCapabilityCache.create(
+                    Capabilities.FluidHandler.BLOCK,
+                    (ServerLevel) level,
+                    destination.getConnectedBlockEntity().getBlockPos(),
+                    incomingDirection
+            );
+
+            var destinationHandler = incomingCapCache.getCapability();
 
             if (destinationHandler == null) continue;
-            
+
             for (var i = 0; i < destinationHandler.getTanks(); i++) {
                 var fluidStack = destinationHandler.getFluidInTank(i);
                 if (fluidStack.isEmpty()) {

@@ -1,0 +1,23 @@
+{
+  "type": "fluxpylons:washing",
+  "ingredients": [
+    {
+      "item": "minecraft:green_wool"
+    }
+  ],
+  "fluid_ingredients": [
+    {
+      "fluid": "minecraft:water",
+      "amount": 100
+    }
+  ],
+  "result": [
+    {
+      "item": "minecraft:white_wool"
+    },
+    {
+      "item": "minecraft:green_dye"
+    }
+  ],
+  "energy": 4800
+}

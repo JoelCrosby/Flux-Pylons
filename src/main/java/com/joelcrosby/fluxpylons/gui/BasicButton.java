@@ -1,8 +1,7 @@
 package com.joelcrosby.fluxpylons.gui;
 
-import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 
 public class BasicButton extends Button {
@@ -11,20 +10,20 @@ public class BasicButton extends Button {
 
     
     public BasicButton(int x, int y, OnPress onPress) {
-        super(x, y, sizeX, sizeY, Component.empty(), onPress);
+        super(x, y, sizeX, sizeY, Component.empty(), onPress, Button.DEFAULT_NARRATION);
     }
 
-    public void render(PoseStack pPoseStack, int pMouseX, int pMouseY, float pPartialTick) {
+    public void renderWidget(GuiGraphics gui, int pMouseX, int pMouseY, float pPartialTick) {
         if (this.visible) {
-            this.isHovered = pMouseX >= this.x && pMouseY >= this.y && pMouseX < this.x + this.width && pMouseY < this.y + this.height;
-            this.renderButton(pPoseStack, pMouseX, pMouseY, pPartialTick);
+            this.isHovered = pMouseX >= this.getX() && pMouseY >= this.getY() && pMouseX < this.getX() + this.width && pMouseY < this.getY() + this.height;
+            super.render(gui, pMouseX, pMouseY, pPartialTick);
         }
     }
 
-    public void onRenderToolTip(PoseStack stack, int x, int y) {
-        super.renderToolTip(stack, x, y);
+    public void onRenderToolTip(GuiGraphics gui, int x, int y) {
+//        gui.render super.renderToolTip(gui, x, y);
     }
-    
+
     @Override
     public void onClick(double x, double y) {
         super.onClick(x, y);
@@ -33,10 +32,5 @@ public class BasicButton extends Button {
     @Override
     public boolean mouseClicked(double x, double y, int button) {
         return super.mouseClicked(x, y, button);
-    }
-
-    @Override
-    public void updateNarration(NarrationElementOutput elementOutput) {
-
     }
 }

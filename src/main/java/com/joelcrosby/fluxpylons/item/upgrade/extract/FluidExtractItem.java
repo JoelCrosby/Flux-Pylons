@@ -5,13 +5,13 @@ import com.joelcrosby.fluxpylons.FluxPylonsContainerMenus;
 import com.joelcrosby.fluxpylons.Utility;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.common.BaseFilterItem;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.common.FluidFilterContainerMenu;
-import com.joelcrosby.fluxpylons.item.upgrade.filter.common.FluidFilterStackHandler;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphDestinationType;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphNode;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphNodeType;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -19,29 +19,22 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+
 
 public class FluidExtractItem extends BaseFilterItem {
-    
-    @Override
-    public ItemStackHandler getItemStackHandler(ItemStack stack) {
-        return new FluidFilterStackHandler(FluxPylonsContainerMenus.BaseFilterContainerSlots, stack);
-    }
 
     @Override
-    protected boolean defaultsToDenyList() {
-        return true;
+    protected int getSlots() {
+        return FluxPylonsContainerMenus.BaseFilterContainerSlots;
     }
-
     @Override
     protected boolean supportsInteractionSide() {
         return true;
     }
-    
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand interactionHand) {
         var stack = player.getItemInHand(interactionHand);
@@ -54,12 +47,12 @@ public class FluidExtractItem extends BaseFilterItem {
     }
 
     public void openGui(Player player, ItemStack stack) {
-        var containerName = Component.translatable("container." + FluxPylons.ID + "." + ForgeRegistries.ITEMS.getKey(this).getPath());
+        var containerName = Component.translatable("container." + FluxPylons.ID + "." + BuiltInRegistries.ITEM.getKey(this).getPath());
 
-        NetworkHooks.openScreen((ServerPlayer) player,
+        player.openMenu(
                 new SimpleMenuProvider((windowId, playerInventory, playerEntity) ->
                         new FluidFilterContainerMenu(windowId, player, stack), containerName),
-                (buffer -> buffer.writeItem(stack))
+                (buffer -> ItemStack.STREAM_CODEC.encode(buffer, stack))
         );
     }
 
@@ -67,28 +60,33 @@ public class FluidExtractItem extends BaseFilterItem {
     protected boolean supportsNbtMatch() {
         return false;
     }
-    
+
     @Override
     public void update(ItemStack itemStack, GraphNode node, Direction dir, GraphNodeType nodeType) {
         var level = node.getLevel();
         var source = level.getBlockEntity(node.getPos().relative(dir));
 
         if (source == null) return;
-        
+
         var isDenyList = BaseFilterItem.getIsDenyList(itemStack);
         var inventory = BaseFilterItem.getInventory(itemStack);
         var interactionDir = BaseFilterItem.getInteractionSide(itemStack);
-        
+
         var handlerDir = interactionDir == null ? dir.getOpposite() : interactionDir;
-        
-        var fluidHandler = source
-                .getCapability(ForgeCapabilities.FLUID_HANDLER, handlerDir)
-                .orElse(null);
+
+        var capCache = BlockCapabilityCache.create(
+                Capabilities.FluidHandler.BLOCK,
+                level,
+                source.getBlockPos(),
+                handlerDir
+        );
+
+        var fluidHandler = capCache.getCapability();
 
         if (fluidHandler == null) return;
 
         var rate = nodeType.getFluidTransferRate();
-        
+
         Tanks:
         for (var i = 0; i < fluidHandler.getTanks(); i++) {
             var availableFluid = fluidHandler.getFluidInTank(i);
@@ -100,7 +98,7 @@ public class FluidExtractItem extends BaseFilterItem {
             if (isDenyList == matchesFilter) {
                 continue;
             }
-            
+
             var simulatedExtract = fluidHandler.drain(rate, IFluidHandler.FluidAction.SIMULATE);
             if (simulatedExtract.isEmpty()) {
                 continue;
@@ -108,10 +106,10 @@ public class FluidExtractItem extends BaseFilterItem {
 
             var destinations = node.getNetwork()
                     .getRelativeDestinations(GraphDestinationType.FLUIDS, source.getBlockPos());
-            
+
             for (var destination : destinations) {
                 if (!destination.canInsert()) continue;
-                
+
                 var destinationEntity = destination.getConnectedBlockEntity();
                 if (destinationEntity == null) continue;
 
@@ -120,12 +118,18 @@ public class FluidExtractItem extends BaseFilterItem {
                 }
 
                 var incomingDirection = destination.incomingDirection().getOpposite();
-                var destinationHandler = destinationEntity
-                        .getCapability(ForgeCapabilities.FLUID_HANDLER, incomingDirection)
-                        .orElse(null);
+
+                var destCapCache = BlockCapabilityCache.create(
+                        Capabilities.FluidHandler.BLOCK,
+                        level,
+                        destinationEntity.getBlockPos(),
+                        incomingDirection
+                );
+
+                var destinationHandler = destCapCache.getCapability();
 
                 if (destinationHandler == null) continue;
-                
+
                 var upgradeManager = destination.getConnectedUpgradeManager();
                 if (!upgradeManager.IsValidDestination(simulatedExtract)) {
                     continue;

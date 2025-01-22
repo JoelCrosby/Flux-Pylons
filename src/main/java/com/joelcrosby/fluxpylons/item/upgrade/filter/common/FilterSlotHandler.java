@@ -2,8 +2,8 @@ package com.joelcrosby.fluxpylons.item.upgrade.filter.common;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.SlotItemHandler;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
 
 import javax.annotation.Nonnull;
 
@@ -32,13 +32,13 @@ public class FilterSlotHandler extends SlotItemHandler {
     @Override
     public void set(@Nonnull ItemStack stack)
     {
-        if (!stack.isEmpty() && !this.getItemHandler().isItemValid(getSlotIndex(), stack)) {
+        if (stack.isEmpty() || !this.getItemHandler().isItemValid(getSlotIndex(), stack)) {
             return;
         }
-        
+
         super.set(stack);
     }
-    
+
     public FilterSlotHandler setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;

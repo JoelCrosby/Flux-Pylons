@@ -2,7 +2,7 @@ package com.joelcrosby.fluxpylons.pipe;
 
 import com.joelcrosby.fluxpylons.item.upgrade.UpgradeItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.ItemStackHandler;
 
 import javax.annotation.Nonnull;
 
@@ -13,7 +13,7 @@ public class PipeUpgradeItemStackHandler extends ItemStackHandler {
     public PipeUpgradeItemStackHandler() {
         super(SIZE);
     }
-    
+
     @Override
     public int getSlotLimit(int slot) {
         return 1;

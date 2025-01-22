@@ -7,13 +7,13 @@ import net.minecraft.resources.ResourceLocation;
 
 public class InteractionSideButton extends ToggleButton {
     private static final ResourceLocation[] Textures = new ResourceLocation[] {
-            new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_side_off.png"),
-            new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_side_down.png"),
-            new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_side_up.png"),
-            new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_side_north.png"),
-            new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_side_south.png"),
-            new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_side_west.png"),
-            new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_side_east.png"),
+            ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_side_off.png"),
+            ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_side_down.png"),
+            ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_side_up.png"),
+            ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_side_north.png"),
+            ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_side_south.png"),
+            ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_side_west.png"),
+            ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_side_east.png"),
     };
 
     private static final String[] Tooltips = new String[] {

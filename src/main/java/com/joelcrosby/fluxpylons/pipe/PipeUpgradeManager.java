@@ -9,6 +9,7 @@ import com.joelcrosby.fluxpylons.pipe.network.NetworkManager;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphNode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -17,8 +18,7 @@ import net.minecraft.world.Containers;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.network.NetworkHooks;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.List;
 
@@ -31,25 +31,25 @@ public class PipeUpgradeManager {
     private static final int tickInterval = 10;
 
     public final PipeUpgradeContainer pipeUpgradeContainer;
-    
+
     private PipeIoMode pipeIoMode = PipeIoMode.INSERT_EXTRACT;
-    
+
     public PipeUpgradeManager(GraphNode node, Direction dir) {
         this.node = node;
         this.dir = dir;
         this.pipeUpgradeContainer = new PipeUpgradeContainer(node);
     }
-    
+
     public void update() {
         var upgrades = pipeUpgradeContainer.getUpgrades();
-        
+
         updateUpgradeItems(upgrades.extractFluids());
         updateUpgradeItems(upgrades.retrieverFluids());
-        
+
         if (tickInterval != 0 && (ticks++) % tickInterval != 0) {
             return;
         }
-        
+
         updateUpgradeItems(upgrades.extractItems());
         updateUpgradeItems(upgrades.retrieverItems());
     }
@@ -66,7 +66,7 @@ public class PipeUpgradeManager {
         this.pipeIoMode = ioMode;
         NetworkManager.get(node.getLevel()).setDirty();
     }
-    
+
     public List<ItemStack> getFilterUpgrades() {
         return this.pipeUpgradeContainer.getUpgrades().filterItems();
     }
@@ -74,12 +74,11 @@ public class PipeUpgradeManager {
     public List<ItemStack> getFluidFilterUpgrades() {
         return this.pipeUpgradeContainer.getUpgrades().filterFluids();
     }
-    
+
     public void OpenContainerMenu(ServerPlayer player) {
         var containerName = Component.translatable("container." + FluxPylons.ID + "." + node.getNodeType().getEntityType().getId());
-        
-        NetworkHooks.openScreen(player,
-                new SimpleMenuProvider((windowId, playerInventory, playerEntity) ->
+
+        player.openMenu(new SimpleMenuProvider((windowId, playerInventory, playerEntity) ->
                         new PipeUpgradeContainerMenu(windowId, player, pipeUpgradeContainer.getItems(), node.getPos(), dir, this.pipeIoMode), containerName),
                 buffer -> {
                     buffer.writeBlockPos(node.getPos());
@@ -88,43 +87,43 @@ public class PipeUpgradeManager {
                 }
         );
     }
-    
+
     public void dropContents(Level level, BlockPos pos) {
         Containers.dropContents(level, pos, pipeUpgradeContainer);
     }
-    
+
     public boolean insertUpgrade(ItemStack itemStack) {
         return pipeUpgradeContainer.insertItem(itemStack);
     }
-    
-    public Tag serializeNBT() {
+
+    public Tag serializeNBT(HolderLookup.Provider provider) {
         var tag = new CompoundTag();
-        tag.put("upgradeItems", pipeUpgradeContainer.getItems().serializeNBT());
+        tag.put("upgradeItems", pipeUpgradeContainer.getItems().serializeNBT(provider));
         tag.putInt("io-mode", pipeIoMode.ordinal());
-        
+
         return tag;
     }
 
-    public void deserializeNBT(CompoundTag tag) {
+    public void deserializeNBT(CompoundTag tag, HolderLookup.Provider provider) {
         if (tag == null) {
             return;
         }
-        
+
         this.pipeIoMode = PipeIoMode.values()[tag.getInt("io-mode")];
-        
-        pipeUpgradeContainer.getItems().deserializeNBT(tag.getCompound("upgradeItems"));
+
+        pipeUpgradeContainer.getItems().deserializeNBT(provider, tag.getCompound("upgradeItems"));
     }
-    
+
     public boolean IsValidDestination(ItemStack itemStack) {
         if (this.pipeIoMode == PipeIoMode.DISABLED || this.pipeIoMode == PipeIoMode.EXTRACT) {
             return false;
         }
-        
+
         var isFiltered = !getFilterUpgrades().isEmpty();
         if (!isFiltered) {
             return true;
         }
-        
+
         return getFilterUpgrades().stream().anyMatch(filter -> IsValidDestination(itemStack, filter));
     }
 
@@ -144,7 +143,7 @@ public class PipeUpgradeManager {
                         return Utility.matchesFilterInventory(inventory, itemStack, matchNbt);
                     }
                 });
-        
+
         return isDenyList != anyMatch;
     }
 
@@ -152,7 +151,7 @@ public class PipeUpgradeManager {
         if (this.pipeIoMode == PipeIoMode.DISABLED || this.pipeIoMode == PipeIoMode.EXTRACT) {
             return false;
         }
-        
+
         var isFiltered = !getFluidFilterUpgrades().isEmpty();
         if (!isFiltered) {
             return true;
@@ -160,7 +159,7 @@ public class PipeUpgradeManager {
 
         return getFluidFilterUpgrades().stream().anyMatch(filter -> IsValidDestination(fluidStack, filter));
     }
-    
+
     private boolean IsValidDestination(FluidStack fluidStack, ItemStack filter) {
         var isDenyList = BaseFilterItem.getIsDenyList(filter);
 

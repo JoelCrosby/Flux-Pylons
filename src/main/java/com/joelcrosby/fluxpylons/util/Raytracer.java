@@ -4,18 +4,18 @@ package com.joelcrosby.fluxpylons.util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.ForgeMod;
 
 import java.util.Collection;
 
 public class Raytracer {
-    
+
     /* taken from MCMP */
     public static RayTraceVectors getRayTraceVectors(Entity entity) {
         float pitch = entity.getXRot();
@@ -29,7 +29,7 @@ public class Raytracer {
         float lookZ = f1 * f3;
         double reach = 5.0D;
         if (entity instanceof Player player) {
-            reach = player.getAttributeValue(ForgeMod.REACH_DISTANCE.get());
+            reach = player.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
         }
         Vec3 end = start.add(lookX * reach, lookY * reach, lookZ * reach);
         return new RayTraceVectors(start, end);
@@ -72,7 +72,7 @@ public class Raytracer {
                 && hit.z >= aabb.minZ
                 && hit.z <= aabb.maxZ;
     }
-    
+
     public static class AdvancedRayTraceResult {
 
         public final VoxelShape bounds;

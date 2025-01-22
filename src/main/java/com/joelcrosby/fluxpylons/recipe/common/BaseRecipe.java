@@ -1,110 +1,100 @@
 package com.joelcrosby.fluxpylons.recipe.common;
 
-import cofh.lib.fluid.FluidIngredient;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.Container;
+import com.joelcrosby.fluxpylons.recipe.WasherRecipe;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.crafting.FluidIngredient;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public abstract class BaseRecipe implements Recipe<Container> {
-    public final ResourceLocation recipeId;
-    public int energy;
+public abstract class BaseRecipe {
+    public final long energy;
+    public final NonNullList<Ingredient> ingredients;
+    public final NonNullList<FluidIngredient> fluidIngredients;
+    public final NonNullList<RecipeItemData> outputItems;
+    public final NonNullList<RecipeFluidData> outputFluids;
 
-    public final List<ItemStackIngredient> inputItems = new ArrayList<>();
-    public final List<FluidIngredient> inputFluids = new ArrayList<>();
-    public final List<ItemStack> outputItems = new ArrayList<>();
-    public final List<FluidStack> outputFluids = new ArrayList<>();
-    
-    public BaseRecipe(RecipeData data) {
-        this.recipeId = data.recipeId;
-
-        this.energy = data.energy;
-        
-        this.inputItems.addAll(data.inputItems);
-        this.inputFluids.addAll(data.inputFluids);
-        this.outputItems.addAll(data.outputItems);
-        this.outputFluids.addAll(data.outputFluids);
-    }
-    
-    public abstract RecipeSerializer<?> getSerializer();
-    
-    public int getInputItemsCount(int index) {
-        return inputItems.size();
+    protected BaseRecipe(List<Ingredient> ingredients,
+                         List<FluidIngredient> fluidIngredients,
+                         List<RecipeItemData> outputItems,
+                         List<RecipeFluidData> outputFluids,
+                         long energy) {
+        this.ingredients = ingredients == null ? NonNullList.create() : NonNullList.copyOf(ingredients);
+        this.fluidIngredients = fluidIngredients == null ? NonNullList.create() : NonNullList.copyOf(fluidIngredients);
+        this.outputItems = outputItems == null ? NonNullList.create() : NonNullList.copyOf(outputItems);
+        this.outputFluids = outputFluids == null ? NonNullList.create() : NonNullList.copyOf(outputFluids);
+        this.energy = energy;
     }
 
-    public int getInputFluidAmount(int index) {
-        return 100;
+    protected static final HashMap<Integer, WasherRecipe> recipeHashMap = new HashMap<>();
+
+    public long getEnergy() {
+        return this.energy;
     }
 
-    public int getOutputItemsCount(int index) {
-        return outputItems.get(index).getCount();
+    public List<RecipeItemData> getOutputItems() {
+        return this.outputItems;
     }
 
-    public int getOutputFluidAmount(int index) {
-        return outputFluids.get(index).getAmount();
+    public NonNullList<Ingredient> getIngredients() {
+        return this.ingredients;
     }
 
-    @Override
-    public boolean matches(Container inv, Level worldIn) {
-        if (inv.isEmpty()) return false;
+    public NonNullList<FluidIngredient> getFluidIngredients() {
+        return this.fluidIngredients;
+    }
+
+    public ItemStack getResultItem(HolderLookup.Provider provider) {
+        return outputItems.stream().findFirst().orElseThrow().getItemStack();
+    }
+
+    public ItemStack assemble(RecipeInputContainer input, HolderLookup.Provider registries) {
+        return outputItems.stream().findFirst().orElseThrow().getItemStack().copy();
+    }
+
+    public boolean canCraftInDimensions(int width, int height) {
+        return true;
+    }
+
+    public List<ItemStack> getOutputItemStacks() {
+        return this.outputItems.stream().map(RecipeItemData::getItemStack).collect(Collectors.toList());
+    }
+
+    public boolean matches(RecipeInputContainer input, Level worldIn) {
+        if (input.isEmpty()) return false;
 
         var matchedItems = 0;
-        var invSize = inv.getContainerSize();
+        var invSize = input.getContainerSize();
 
         for (int j = 0; j < invSize; j++) {
-            var invItem = inv.getItem(j);
+            var invItem = input.getItem(j);
 
-            for (var inputItem : inputItems) {
+            for (var inputItem : ingredients) {
                 if (isValidItemStack(inputItem, invItem)) {
                     matchedItems++;
                 }
             }
         }
 
-        return inputItems.size() == matchedItems;
+        return ingredients.size() == matchedItems;
     }
 
-    private boolean isValidItemStack(ItemStackIngredient ingredient, ItemStack toMatch) {
-        var itemStacks = ingredient.getItems();
-        
-        for (var stack : itemStacks) {
-            var isSameItem = stack.sameItem(toMatch);
+    private boolean isValidItemStack(Ingredient ingredient, ItemStack toMatch) {
+        var items = ingredient.getItems();
 
-            if (isSameItem && toMatch.getCount() >= ingredient.getAmount()) {
+        for (var item : items) {
+            var isSameItem = ItemStack.isSameItemSameComponents(item, toMatch);
+
+            if (isSameItem && toMatch.getCount() >= item.getCount()) {
                 return true;
             }
         }
 
         return false;
     }
-    
-    @Override
-    public ItemStack assemble(Container inv) {
-        return ItemStack.EMPTY;
-    }
-
-    @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return true;
-    }
-
-    @Override
-    public ItemStack getResultItem() {
-        return outputItems.stream().findFirst().orElse(ItemStack.EMPTY);
-    }
-
-    @Override
-    public ResourceLocation getId() {
-        return recipeId;
-    }
-
-    @Override
-    public abstract RecipeType<?> getType();
 }

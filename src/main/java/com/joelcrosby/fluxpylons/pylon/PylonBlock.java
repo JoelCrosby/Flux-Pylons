@@ -3,8 +3,10 @@ package com.joelcrosby.fluxpylons.pylon;
 import com.google.common.collect.ImmutableMap;
 import com.joelcrosby.fluxpylons.pylon.network.PylonNetworkManager;
 import com.joelcrosby.fluxpylons.pylon.network.graph.PylonGraphNodeType;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -20,8 +22,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.level.material.Material;
-import net.minecraft.world.level.material.MaterialColor;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -38,7 +38,7 @@ public class PylonBlock extends BaseEntityBlock {
             .build();
     
     public PylonBlock() {
-        super(Block.Properties.of(Material.METAL, MaterialColor.METAL).sound(SoundType.NETHERITE_BLOCK).strength(1.2f));
+        super(Properties.of().sound(SoundType.NETHERITE_BLOCK).strength(1.2f));
 
         var state = this.defaultBlockState()
                 .setValue(BlockStateProperties.WATERLOGGED, false)
@@ -53,18 +53,21 @@ public class PylonBlock extends BaseEntityBlock {
     }
 
     @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return null;
+    }
+
+    @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public FluidState getFluidState(BlockState state) {
         return state.getValue(BlockStateProperties.WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
         if (!level.isClientSide) {
             var manager = PylonNetworkManager.get(level);
@@ -76,7 +79,7 @@ public class PylonBlock extends BaseEntityBlock {
             var pylon = manager.getNode(pos);
 
             if (pylon != null && pylon.getNetwork() != null) {
-                pylon.getNetwork().scanGraph(level, pos);
+                pylon.getNetwork().scanGraph((ServerLevel) level, pos);
             }
         }
     }
@@ -88,7 +91,6 @@ public class PylonBlock extends BaseEntityBlock {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
         return DIR_SHAPES.get(state.getOptionalValue(BlockStateProperties.FACING).orElse(Direction.DOWN));
     }

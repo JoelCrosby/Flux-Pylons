@@ -5,6 +5,7 @@ import com.joelcrosby.fluxpylons.pylon.network.graph.PylonGraphNode;
 import com.joelcrosby.fluxpylons.pylon.network.graph.PylonGraphNodeType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -23,25 +24,25 @@ public class PylonNetworkManager extends SavedData {
     private static final Logger LOGGER = LogManager.getLogger(PylonNetworkManager.class);
 
     public static final int CONNECTION_RANGE = 16;
-    
-    private final Level level;
+
     private final HashMap<String, PylonNetwork> networks = new HashMap<>();
     private final HashMap<BlockPos, PylonGraphNode> nodes = new HashMap<>();
 
-    public PylonNetworkManager(Level level) {
-        this.level = level;
-    }
+    public PylonNetworkManager() {}
 
     public static PylonNetworkManager get(Level level) {
         return get((ServerLevel) level);
     }
 
     public static PylonNetworkManager get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent((tag) -> {
-            var networkManager = new PylonNetworkManager(level);
-            networkManager.load(tag);
-            return networkManager;
-        }, () -> new PylonNetworkManager(level), NAME);
+        return level.getDataStorage().computeIfAbsent(new Factory<>(
+                PylonNetworkManager::new,
+                (tag, provider) -> {
+                    var networkManager = new PylonNetworkManager();
+                    networkManager.load(tag, level);
+                    return networkManager;
+                }),
+        NAME);
     }
 
     public void addNetwork(PylonNetwork network) {
@@ -68,7 +69,7 @@ public class PylonNetworkManager extends SavedData {
         setDirty();
     }
 
-    private void formNetworkAt(Level level, BlockPos pos, PylonGraphNodeType nodeType) {
+    private void formNetworkAt(ServerLevel level, BlockPos pos, PylonGraphNodeType nodeType) {
         var networkId = UUID.randomUUID().toString().substring(0, 8);
         var network = new PylonNetwork(networkId, pos, level, nodeType);
 
@@ -78,7 +79,7 @@ public class PylonNetworkManager extends SavedData {
         LOGGER.debug("Formed network {} at {}", network.getId(), pos);
     }
 
-    public void mergeNetworksIntoOne(Set<PylonGraphNode> candidates, Level level, BlockPos pos) {
+    public void mergeNetworksIntoOne(Set<PylonGraphNode> candidates, ServerLevel level, BlockPos pos) {
         if (candidates.isEmpty()) {
             throw new RuntimeException("Cannot merge networks: no candidates");
         }
@@ -258,7 +259,7 @@ public class PylonNetworkManager extends SavedData {
         return networks.values();
     }
     
-    public void load(CompoundTag tag) {
+    public void load(CompoundTag tag, ServerLevel level) {
         var nodeTags = tag.getList("nodes", Tag.TAG_COMPOUND);
         
         for (var nodeTag : nodeTags) {
@@ -285,7 +286,7 @@ public class PylonNetworkManager extends SavedData {
 
     @Override
     @NotNull
-    public CompoundTag save(CompoundTag tag) {
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
         var nodeTags = new ListTag();
         var networkTags = new ListTag();
 

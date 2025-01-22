@@ -1,0 +1,38 @@
+{
+  "type": "fluxpylons:smelting",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "registry": "minecraft:item",
+        "tag": "c:ingots/silver"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "registry": "minecraft:item",
+        "tag": "c:ingots/electrum"
+      }
+    }
+  ],
+  "ingredients": [
+    {
+      "tag": "c:ingots/gold",
+      "count": 1
+    },
+    {
+      "tag": "c:ingots/silver",
+      "count": 1
+    }
+  ],
+  "result": [
+    {
+      "tag": "c:ingots/electrum",
+      "count": 2
+    }
+  ],
+  "energy": 6400
+}

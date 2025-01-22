@@ -2,18 +2,20 @@ package com.joelcrosby.fluxpylons;
 
 import com.joelcrosby.fluxpylons.pipe.network.NetworkManager;
 import com.joelcrosby.fluxpylons.pylon.network.PylonNetworkManager;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
-@Mod.EventBusSubscriber
+@EventBusSubscriber
 public final class Events {
-    
+
     @SubscribeEvent
-    public static void onLevelTick(TickEvent.LevelTickEvent e) {
-        if (!e.level.isClientSide && e.phase == TickEvent.Phase.END) {
-            NetworkManager.get(e.level).getNetworks().forEach(n -> n.update(e.level));
-            PylonNetworkManager.get(e.level).getNetworks().forEach(n -> n.update(e.level));
+    public static void onLevelTick(ServerTickEvent.Post e) {
+        var levels = e.getServer().getAllLevels();
+
+        for (var level : levels) {
+            NetworkManager.get(level).getNetworks().forEach(n -> n.update(level));
+            PylonNetworkManager.get(level).getNetworks().forEach(n -> n.update(level));
         }
     }
 }

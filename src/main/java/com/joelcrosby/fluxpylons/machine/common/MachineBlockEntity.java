@@ -3,26 +3,29 @@ package com.joelcrosby.fluxpylons.machine.common;
 import com.joelcrosby.fluxpylons.FluxPylons;
 import com.joelcrosby.fluxpylons.energy.FluxEnergyStorage;
 import com.joelcrosby.fluxpylons.recipe.common.BaseRecipe;
+import com.joelcrosby.fluxpylons.recipe.common.RecipeInputContainer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,28 +34,26 @@ import java.util.Arrays;
 public abstract class MachineBlockEntity extends BlockEntity implements MenuProvider {
 
     private final FluxEnergyStorage energyStorage;
-    private final LazyOptional<IEnergyStorage> lazyStorage;
-    
+
     private final BlockEntityType<?> type;
 
     protected MachineState machineState = MachineState.IDLE;
-    
-    protected int consumedEnergy = 0;
-    protected int maxEnergy = 0;
+
+    protected long consumedEnergy = 0;
+    protected long maxEnergy = 0;
 
     public MachineBlockEntity(BlockEntityType<?> type,  BlockPos pos, BlockState state) {
         super(type, pos, state);
         this.type = type;
-        
+
         this.energyStorage = new FluxEnergyStorage(100000, 1000, 0);
-        this.lazyStorage = LazyOptional.of(() -> energyStorage);
     }
 
     public abstract MachineCapabilityHandler getCapabilityHandler();
-    
+
     @Nullable
-    public abstract BaseRecipe getRecipe(Level level, Container container) ;
-    
+    public abstract BaseRecipe getRecipe(Level level, RecipeInputContainer container) ;
+
     @Override
     public Component getDisplayName() {
         var name = BlockEntityType.getKey(type).getPath();
@@ -62,35 +63,8 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
     @Override
     public void setRemoved() {
         super.setRemoved();
-        
-        lazyStorage.invalidate();
     }
 
-    @Nonnull
-    @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-        if (cap == ForgeCapabilities.ENERGY) {
-            return lazyStorage.cast();
-        }
-
-        var itemHandler = getCapabilityHandler().itemHandler();
-        var fluidHandler = getCapabilityHandler().fluidHandler();
-        
-        if (cap == ForgeCapabilities.ITEM_HANDLER) {
-            if (itemHandler != null && itemHandler.isPresent()) {
-                return itemHandler.cast();
-            }
-        }
-
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            if (fluidHandler != null && fluidHandler.isPresent()) {
-                return fluidHandler.cast();
-            }
-        }
-
-        return LazyOptional.empty();
-    }
-    
     public void tick(Level level, BlockPos pos, BlockState state) {
         sendClientUpdate();
 
@@ -98,7 +72,10 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
 
         var inventory = getCapabilityHandler().items();
         var fluidInventory = getCapabilityHandler().fluids();
-        var container = new SimpleContainer(inventory.getSlots());
+
+        if (inventory == null) return;
+
+        var container = new RecipeInputContainer(inventory.getSlots());
 
         for (var i = 0; i < inventory.getInputSlots(); i++) {
             var inputStack = inventory.getStackInSlot(i);
@@ -107,7 +84,7 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
 
         var energy = 20;
         var recipe = getRecipe(level, container);
-        
+
         if (recipe == null || !getCapabilityHandler().canProcessInput(recipe)) {
             consumedEnergy = 0;
 
@@ -115,56 +92,56 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
                 blockstate = state.setValue(BlockStateProperties.LIT, Boolean.FALSE);
                 level.setBlock(pos, blockstate, 3);
             }
-            
+
             return;
         }
 
         maxEnergy = recipe.energy;
-        
+
         if (getCapabilityHandler().hasOutputSpaceForRecipe(recipe) && canConsumeEnergy()) {
             if (machineState == MachineState.COMPLETE) {
-                
+
                 // consume recipe inputs
-                
-                for (var i = 0; i < recipe.inputItems.size(); i++) {
-                    var ingredient = recipe.inputItems.get(i);
-                    var amount = ingredient.getAmount();
+
+                for (var i = 0; i < recipe.ingredients.size(); i++) {
+                    var ingredient = recipe.ingredients.get(i);
+                    var amount = Arrays.stream(ingredient.getItems()).findFirst().orElse(ItemStack.EMPTY).getCount();
 
                     inventory.extractItem(i, amount, false);
                 }
 
-                for (var i = 0; i < recipe.inputFluids.size(); i++) {
-                    var ingredient = recipe.inputFluids.get(i);
-                    var amount = Arrays.stream(ingredient.getFluids()).findFirst().orElse(FluidStack.EMPTY).getAmount();
+                for (var i = 0; i < recipe.fluidIngredients.size(); i++) {
+                    var ingredient = recipe.fluidIngredients.get(i);
+                    var amount = Arrays.stream(ingredient.getStacks()).findFirst().orElse(FluidStack.EMPTY).getAmount();
 
-                    fluidInventory.drainInput(0, amount, IFluidHandler.FluidAction.EXECUTE);
+                    fluidInventory.drainInput(i, amount, IFluidHandler.FluidAction.EXECUTE);
                 }
-                
+
                 // insert recipe output into machine inventory
-                
+
                 for (var i = 0; i < recipe.outputItems.size(); i++) {
-                    var outputCount = recipe.getOutputItemsCount(i);
-                    var stack = recipe.outputItems.get(i);
+                    var outputCount = recipe.outputItems.get(i).count();
+                    var stack = recipe.outputItems.get(i).getItemStack();
                     var newOutputStack = stack.copy();
                     var outputSlot = inventory.getAvailableOutputSlot(outputCount, stack);
-                    
+
                     if (outputSlot == -1) {
                         return;
                     }
 
                     var output = inventory.getAvailableOutputStack(outputCount, stack);
-                    
+
                     // Manipulating the Output slot
-                    
+
                     if (output.getItem() != newOutputStack.getItem() || output.getItem() == Items.AIR) {
                         if (output.getItem() == Items.AIR) { // Fix air > 1 jamming slots
                             output.setCount(1);
                         }
 
-                        newOutputStack.setCount(recipe.getOutputItemsCount(i));
+                        newOutputStack.setCount(recipe.outputItems.get(i).count());
                         inventory.insertItem(outputSlot, newOutputStack.copy(), false);
                     } else {
-                        output.setCount(recipe.getOutputItemsCount(i));
+                        output.setCount(recipe.outputItems.get(i).count());
                         inventory.insertItem(outputSlot, newOutputStack.copy(), false);
                     }
                 }
@@ -182,7 +159,7 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
                 }
             } else {
                 // Check if we should start processing
-                
+
                 if (inventory.hasOutputSpaceForRecipe(recipe)) {
                     machineState = MachineState.PROCESSING;
                     blockstate = state.setValue(BlockStateProperties.LIT, Boolean.TRUE);
@@ -194,14 +171,14 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
                 level.setBlock(pos, blockstate, 3);
                 this.setChanged();
             }
-        } else { 
+        } else {
             // This is if we reach the maximum in the slots; or no power
-            
+
             if (!canConsumeEnergy()) { // if no power
                 machineState = MachineState.IDLE;
-            } else { 
+            } else {
                 // zero in other cases
-                
+
                 machineState = MachineState.IDLE;
                 consumedEnergy = 0;
             }
@@ -215,10 +192,10 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, MachineBlockEntity entity) {
         entity.tick(level, pos, state);
-        
+
         if (entity.getEnergyItemCapability() != null) {
             var itemEnergyStorage = entity.getEnergyItemCapability();
-            
+
             if (entity.energyStorage.getEnergyStored() < entity.energyStorage.getMaxEnergyStored()) {
                 entity.energyStorage.receiveEnergy(itemEnergyStorage.extractEnergy(200, false), false);
             }
@@ -230,39 +207,38 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
         level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 1);
     }
 
-    public LazyOptional<IEnergyStorage> getEnergy() {
-        return lazyStorage;
+    public IEnergyStorage getEnergy() {
+        return energyStorage;
     }
-    
+
     public void consumeEnergy(int amount) {
         var toExtract = amount;
-        
+
         var itemCap = getEnergyItemCapability();
         if (itemCap != null) {
             toExtract = toExtract - itemCap.extractEnergy(toExtract, false);
-        } 
-        
-        var internalCap = lazyStorage.orElse(null);
-        if (internalCap != null) {
-            toExtract = toExtract - ((FluxEnergyStorage)internalCap).extractInternal(toExtract, false);
+        }
+
+        if (energyStorage != null) {
+            toExtract = toExtract - energyStorage.extractInternal(toExtract, false);
         }
 
         consumedEnergy = consumedEnergy + amount - toExtract;
     }
-    
+
     @Nullable
     public IEnergyStorage getEnergyItemCapability() {
         var handler = getCapabilityHandler().items();
         var energySlot = handler.getSlots() - 1;
         var energyStack = handler.getStackInSlot(energySlot);
-        
-        return energyStack.getCapability(ForgeCapabilities.ENERGY).orElse(null);
+
+        return energyStack.getCapability(Capabilities.EnergyStorage.ITEM);
     }
-    
+
     public boolean canConsumeEnergy() {
-        return lazyStorage.map(e -> e.getEnergyStored() > 0).orElse(false);
+        return energyStorage.getEnergyStored() > 0;
     }
-    
+
     public int getProgress() {
         if (maxEnergy <= 0) return 0;
         if (consumedEnergy > maxEnergy) return 100;
@@ -274,47 +250,48 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
-    
+
     @Nonnull
     @Override
-    public CompoundTag getUpdateTag() {
+    public CompoundTag getUpdateTag(@NotNull HolderLookup.Provider provider) {
         var compoundTag = new CompoundTag();
-        this.saveAdditional(compoundTag);
+        this.saveAdditional(compoundTag, provider);
         return compoundTag;
     }
-    
+
     @Override
-    public void load(CompoundTag compound) {
+    public void loadAdditional(CompoundTag compound, HolderLookup.Provider provider) {
         this.energyStorage.setEnergyStored(compound.getInt("energy"));
 
         var inventory = compound.getCompound("inventory");
         var handler = getCapabilityHandler().items();
         if (handler != null) {
-            handler.deserializeNBT(inventory);
+            handler.deserializeNBT(provider, inventory);
         }
 
         var fluidInventory = compound.getCompound("fluidInventory");
         var fluidHandler = getCapabilityHandler().fluids();
         if (fluidHandler != null) {
-            fluidHandler.readFromNBT(fluidInventory);
+            fluidHandler.readFromNBT(fluidInventory, provider);
         }
-        
-        maxEnergy = compound.getInt("maxEnergy");
-        consumedEnergy = compound.getInt("consumedEnergy");
+
+        maxEnergy = compound.getLong("maxEnergy");
+        consumedEnergy = compound.getLong("consumedEnergy");
         machineState = MachineState.values()[compound.getInt("state")];
-        
-        super.load(compound);
+
+        super.loadAdditional(compound, provider);
     }
 
     @Override
-    protected void saveAdditional(CompoundTag compound) {
-        super.saveAdditional(compound);
+    protected void saveAdditional(CompoundTag compound, HolderLookup.Provider provider) {
+        super.saveAdditional(compound, provider);
+
         compound.putInt("energy", energyStorage.getEnergyStored());
 
-        getCapabilityHandler().saveAdditional(compound);
-        
-        compound.putInt("maxEnergy", maxEnergy);
-        compound.putInt("consumedEnergy", consumedEnergy);
+        getCapabilityHandler().saveAdditional(compound, provider);
+
+        compound.putLong("maxEnergy", maxEnergy);
+        compound.putLong("consumedEnergy", consumedEnergy);
         compound.putInt("state", machineState.ordinal());
     }
 }

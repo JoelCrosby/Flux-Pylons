@@ -1,0 +1,30 @@
+{
+  "type": "fluxpylons:smelting",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "registry": "minecraft:item",
+        "tag": "c:ingots/tin"
+      }
+    }
+  ],
+  "ingredients": [
+    {
+      "item": "minecraft:copper_ingot",
+      "count": 3
+    },
+    {
+      "tag": "c:ingots/tin",
+      "count": 1
+    }
+  ],
+  "result": [
+    {
+      "tag": "c:ingots/bronze",
+      "count": 4
+    }
+  ],
+  "energy": 6400
+}

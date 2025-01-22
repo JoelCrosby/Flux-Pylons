@@ -1,0 +1,38 @@
+{
+  "type": "fluxpylons:smelting",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "registry": "minecraft:item",
+        "tag": "c:ingots/nickel"
+      }
+    },
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "registry": "minecraft:item",
+        "tag": "c:ingots/invar"
+      }
+    }
+  ],
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 1
+    },
+    {
+      "tag": "c:ingots/nickel",
+      "count": 1
+    }
+  ],
+  "result": [
+    {
+      "tag": "c:ingots/invar",
+      "count": 2
+    }
+  ],
+  "energy": 6400
+}

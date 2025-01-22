@@ -4,17 +4,15 @@ import com.joelcrosby.fluxpylons.Utility;
 import com.joelcrosby.fluxpylons.item.WrenchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Containers;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.*;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -26,20 +24,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
 public abstract class MachineBlock extends BaseEntityBlock {
-    public MachineBlock(Block.Properties props) {
-        super(props);
-        
+    public MachineBlock(Properties props) {
+        super(Properties.of());
+
         var state = this.defaultBlockState()
                 .setValue(BlockStateProperties.LIT, false)
                 .setValue(BlockStateProperties.FACING, Direction.NORTH);
@@ -48,44 +45,48 @@ public abstract class MachineBlock extends BaseEntityBlock {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult result) {
+    public ItemInteractionResult useItemOn(@NotNull ItemStack stack,
+                                           @NotNull BlockState state,
+                                           @NotNull Level level,
+                                           @NotNull BlockPos pos,
+                                           @NotNull Player player,
+                                           @NotNull InteractionHand hand,
+                                           @NotNull BlockHitResult hit) {
         var itemStack = player.getItemInHand(player.getUsedItemHand());
         var entity = level.getBlockEntity(pos);
-        
+
         if (!player.isCrouching() && itemStack.getItem() instanceof WrenchItem) {
-            return InteractionResult.FAIL;
+            return ItemInteractionResult.FAIL;
         }
 
         if (entity instanceof MachineBlockEntity machine) {
-            if (!player.isCrouching() && itemStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent()) {
+            if (!player.isCrouching() && itemStack.getCapability(Capabilities.FluidHandler.ITEM) != null) {
                 return getFluidItemInteractionResult(level, player, hand, itemStack, machine);
             } else if (!level.isClientSide && player instanceof ServerPlayer serverPlayer ) {
-                NetworkHooks.openScreen(serverPlayer, machine, machine.getBlockPos());
+                serverPlayer.openMenu(machine, machine.getBlockPos());
             }
-            
-            return InteractionResult.sidedSuccess(level.isClientSide);
+
+            return ItemInteractionResult.sidedSuccess(level.isClientSide);
         }
-        
-        return InteractionResult.SUCCESS;
+
+        return ItemInteractionResult.SUCCESS;
     }
 
-    @Nullable
-    private static InteractionResult getFluidItemInteractionResult(Level level, Player player, InteractionHand hand, ItemStack itemStack, MachineBlockEntity entity) {
-        var result = InteractionResult.sidedSuccess(level.isClientSide);
-        
-        var itemCap = itemStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
+    private static ItemInteractionResult getFluidItemInteractionResult(Level level, Player player, InteractionHand hand, ItemStack itemStack, MachineBlockEntity entity) {
+        var result = ItemInteractionResult.sidedSuccess(level.isClientSide);
+
+        var itemCap = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
         var machineCap = entity.getCapabilityHandler().fluids();
-        
+
         var toDrain = machineCap.getTankCapacity(0) - machineCap.getFluidInTank(0).getAmount();
         var simulatedDrain = itemCap.drain(toDrain, IFluidHandler.FluidAction.SIMULATE);
-        
+
         if (simulatedDrain.getAmount() == itemCap.getFluidInTank(0).getAmount()) {
             var drained = itemCap.drain(toDrain, IFluidHandler.FluidAction.EXECUTE);
             machineCap.fill(drained, IFluidHandler.FluidAction.EXECUTE);
-            
+
             var container = itemCap.getContainer();
-            
+
             if (itemStack.getCount() == 1) {
                 player.setItemInHand(hand, container);
             } else if (itemStack.getCount() > 1 && player.getInventory().add(container)) {
@@ -94,7 +95,7 @@ public abstract class MachineBlock extends BaseEntityBlock {
                 player.drop(container, false, true);
                 itemStack.shrink(1);
             }
-            
+
             player.getInventory().setChanged();
         } else {
             var drained = itemCap.drain(toDrain, IFluidHandler.FluidAction.EXECUTE);
@@ -105,20 +106,24 @@ public abstract class MachineBlock extends BaseEntityBlock {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
             var entity = world.getBlockEntity(pos);
 
             if (entity instanceof MachineBlockEntity machine) {
                 var handler = machine.getCapabilityHandler().items();
-                var container = new SimpleContainer(machine.getCapabilityHandler().items().getSlots());
-                
-                for (var i = 0; i < handler.getSlots(); i++) {
-                    var stack = handler.getStackInSlot(i);
+                var container = new SimpleContainer(handler.getOutputSlots() + handler.getInputSlots());
+
+                for (var i = 0; i < handler.getInputSlots(); i++) {
+                    var stack = handler.getInputItemStack(i);
                     container.addItem(stack);
                 }
-                
+
+                for (var i = 0; i < handler.getOutputSlots(); i++) {
+                    var stack = handler.getOutputItemStack(i);
+                    container.addItem(stack);
+                }
+
                 Containers.dropContents(world, pos, container);
                 world.updateNeighbourForOutputSignal(pos, this);
             }
@@ -131,7 +136,7 @@ public abstract class MachineBlock extends BaseEntityBlock {
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
-    
+
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext blockPlaceContext) {
         return this.defaultBlockState().setValue(BlockStateProperties.FACING, blockPlaceContext.getHorizontalDirection().getOpposite());
@@ -150,7 +155,7 @@ public abstract class MachineBlock extends BaseEntityBlock {
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter worldIn, List<Component> tooltip, TooltipFlag flagIn) {
-        Utility.addTooltip(ForgeRegistries.BLOCKS.getKey(this).getPath(), tooltip);
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag tooltipFlag) {
+        Utility.addTooltip(BuiltInRegistries.BLOCK.getKey(this).getPath(), tooltip);
     }
 }

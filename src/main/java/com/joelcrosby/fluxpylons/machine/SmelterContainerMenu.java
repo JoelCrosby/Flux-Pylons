@@ -7,7 +7,6 @@ import com.joelcrosby.fluxpylons.container.BaseOutputSlot;
 import com.joelcrosby.fluxpylons.machine.common.MachineContainerMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
 public class SmelterContainerMenu extends MachineContainerMenu<SmelterBlockEntity> {
 
@@ -16,25 +15,22 @@ public class SmelterContainerMenu extends MachineContainerMenu<SmelterBlockEntit
     }
 
     @Override
-    protected int getSlotCount() {
-        return 9;
-    }
-
-    @Override
     public void addOwnSlots() {
-        tile.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-            addSlot(new BaseInputSlot(handler, 0, 30, 25));
-            addSlot(new BaseInputSlot(handler, 1, 48, 25));
-            addSlot(new BaseInputSlot(handler, 2, 66, 25));
-            
-            addSlot(new BaseInputSlot(handler, 3, 30, 43));
-            addSlot(new BaseInputSlot(handler, 4, 48, 43));
-            addSlot(new BaseInputSlot(handler, 5, 66, 43));
-            
-            addSlot(new BaseOutputSlot(handler, 6, 128, 35));
-            addSlot(new BaseOutputSlot(handler, 7, 148, 35));
-            
-            addSlot(new BaseEnergySlot(handler, 8, 8, 53));
-        });
+        var handler = tile.getCapabilityHandler().itemHandler();
+
+        if (handler.isPresent()) {
+            addSlot(new BaseInputSlot(handler.get(), 0, 30, 25));
+            addSlot(new BaseInputSlot(handler.get(), 1, 48, 25));
+            addSlot(new BaseInputSlot(handler.get(), 2, 66, 25));
+
+            addSlot(new BaseInputSlot(handler.get(), 3, 30, 43));
+            addSlot(new BaseInputSlot(handler.get(), 4, 48, 43));
+            addSlot(new BaseInputSlot(handler.get(), 5, 66, 43));
+
+            addSlot(new BaseOutputSlot(handler.get(), 6, 128, 35));
+            addSlot(new BaseOutputSlot(handler.get(), 7, 148, 35));
+
+            addSlot(new BaseEnergySlot(handler.get(), 8, 8, 53));
+        }
     }
 }

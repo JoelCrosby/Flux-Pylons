@@ -1,24 +1,32 @@
 package com.joelcrosby.fluxpylons.setup;
 
 import com.joelcrosby.fluxpylons.FluxPylons;
-import com.joelcrosby.fluxpylons.FluxPylonsItems;
 import com.joelcrosby.fluxpylons.pipe.IPipeConnectable;
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.capabilities.BlockCapability;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
+import static com.joelcrosby.fluxpylons.FluxPylonsItems.ITEM_REGISTRY;
+import static com.joelcrosby.fluxpylons.FluxPylonsItems.WRENCH;
+
 public class Common {
-    
-    public static final CreativeModeTab TAB = new CreativeModeTab(FluxPylons.ID) {
-        @Override
-        public ItemStack makeIcon() {
-            return new ItemStack(FluxPylonsItems.WRENCH.get());
-        }
-    };
-    
-    public static final Capability<IPipeConnectable> pipeConnectableCapability = CapabilityManager.get(new CapabilityToken<>() {});
+
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, FluxPylons.ID);
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = CREATIVE_MODE_TABS.register(FluxPylons.ID, () -> CreativeModeTab.builder()
+            .title(Component.literal("Flux Pylons"))
+            .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
+            .icon(() -> new ItemStack(WRENCH))
+            .displayItems((parameters, output) -> {
+                ITEM_REGISTRY.getEntries().forEach(e -> {
+                    var item = e.get();
+                    output.accept(item);
+                });
+            }).build());
 }

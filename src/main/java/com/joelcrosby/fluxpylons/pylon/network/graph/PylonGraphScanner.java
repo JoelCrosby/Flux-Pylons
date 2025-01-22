@@ -7,9 +7,10 @@ import com.joelcrosby.fluxpylons.pylon.PylonBlockEntity;
 import com.joelcrosby.fluxpylons.pylon.network.PylonNetworkManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
+import net.neoforged.neoforge.capabilities.Capabilities;
 
 import java.util.*;
 
@@ -31,18 +32,18 @@ public class PylonGraphScanner {
         this.removedNodes.addAll(currentNodes);
         this.connections = new Hashtable<>();
     }
-    
-    public PylonGraphScannerResult scanAt(Level level, BlockPos pos) {
+
+    public PylonGraphScannerResult scanAt(ServerLevel level, BlockPos pos) {
         addRequest(new PylonGraphScannerRequest(level, pos, null, null, null, null, false));
 
         PylonGraphScannerRequest request;
-        
+
         while ((request = requests.poll()) != null) {
             singleScanAt(request);
         }
 
         updateNodeConnections(foundNodes);
-        
+
         return new PylonGraphScannerResult(
             foundNodes,
             newNodes,
@@ -57,11 +58,11 @@ public class PylonGraphScanner {
         requests.add(request);
         allRequests.add(request);
     }
-    
+
     private void updateNodeConnections(Collection<PylonGraphNode> nodes) {
         for (var n : nodes ) {
             var entity = Utility.getExistingBlockEntity(PylonBlockEntity.class, n.level, n.getPos());
-            
+
             if (entity instanceof PylonBlockEntity) {
                 entity.updateConnections(connections.getOrDefault(n.getPos(), new HashSet<>()));
             }
@@ -70,7 +71,7 @@ public class PylonGraphScanner {
 
     private void singleScanAt(PylonGraphScannerRequest request) {
         var node = PylonNetworkManager.get(request.getLevel()).getNode(request.getPos());
-        
+
         if (node != null && !request.ignoreNodes()) {
             if (!this.nodeType.equals(node.nodeType)) {
                 return;
@@ -79,7 +80,7 @@ public class PylonGraphScanner {
             if (!foundNodes.add(node)) {
                 return;
             }
-            
+
             if (request.getParent() != null) {
                 var key = request.getParent().getPos();
                 var value = node.getPos();
@@ -93,7 +94,7 @@ public class PylonGraphScanner {
                     connections.put(key, Sets.newHashSet(value));
                 }
             }
-            
+
             if (!currentNodes.contains(node)) {
                 newNodes.add(node);
             }
@@ -101,12 +102,12 @@ public class PylonGraphScanner {
             removedNodes.remove(node);
 
             request.setSuccessful(true);
-            
+
             var level = node.getLevel();
             var facing = node.getDirection();
-            
+
             for (var dir : Direction.values()) {
-                
+
                 if (dir == facing) {
                     addRequest(new PylonGraphScannerRequest(
                             request.getLevel(),
@@ -117,22 +118,22 @@ public class PylonGraphScanner {
                             node,
                             true
                     ));
-                    
+
                     continue;
                 }
-                
+
                 for (var i = 0; i < PylonNetworkManager.CONNECTION_RANGE; i++) {
                     var targetPos = node.getPos().relative(dir, i + 1);
                     var targetBlockState = level.getBlockState(targetPos);
                     var targetBlock = targetBlockState.getBlock();
-                    
+
                     if (targetBlock instanceof PylonBlock) {
                         var targetFacing = targetBlockState.getValue(BlockStateProperties.FACING);
-                        
+
                         if (targetFacing == facing && targetFacing == dir) {
                             continue;
                         }
-                        
+
                         addRequest(new PylonGraphScannerRequest(
                             request.getLevel(),
                             targetPos,
@@ -155,22 +156,46 @@ public class PylonGraphScanner {
             var pos = request.getPos();
             var dir = request.getPylonDirection();
             var facingDirection = dir.getOpposite();
-            
+
             var parentNode = PylonNetworkManager.get(request.getLevel()).getNode(request.getParent().getPos());
             var blockEntity = request.getLevel().getBlockEntity(pos);
 
             if (blockEntity == null) {
                 return;
             }
-            
-            blockEntity.getCapability(ForgeCapabilities.ENERGY, facingDirection)
-                .ifPresent(handler -> destinations.add(new PylonGraphDestination(pos, dir, parentNode, PylonGraphDestinationType.ENERGY)));
-            
-            blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER, facingDirection)
-                .ifPresent(handler -> destinations.add(new PylonGraphDestination(pos, dir, parentNode, PylonGraphDestinationType.ITEMS)));
-            
-            blockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, facingDirection)
-                .ifPresent(handler -> destinations.add(new PylonGraphDestination(pos, dir, parentNode, PylonGraphDestinationType.FLUIDS)));
+
+            var energyCap = BlockCapabilityCache.create(
+                    Capabilities.ItemHandler.BLOCK,
+                    (ServerLevel) request.getLevel(),
+                    pos,
+                    facingDirection
+            );
+
+            var fluidCap = BlockCapabilityCache.create(
+                    Capabilities.FluidHandler.BLOCK,
+                    (ServerLevel) request.getLevel(),
+                    pos,
+                    facingDirection
+            );
+
+            var itemCap = BlockCapabilityCache.create(
+                    Capabilities.ItemHandler.BLOCK,
+                    (ServerLevel) request.getLevel(),
+                    pos,
+                    facingDirection
+            );
+
+            if (energyCap.getCapability() != null) {
+                destinations.add(new PylonGraphDestination(pos, dir, parentNode, PylonGraphDestinationType.ENERGY));
+            }
+
+            if (fluidCap.getCapability() != null) {
+                destinations.add(new PylonGraphDestination(pos, dir, parentNode, PylonGraphDestinationType.FLUIDS));
+            }
+
+            if (itemCap.getCapability() != null) {
+                destinations.add(new PylonGraphDestination(pos, dir, parentNode, PylonGraphDestinationType.ITEMS));
+            }
         }
     }
 }

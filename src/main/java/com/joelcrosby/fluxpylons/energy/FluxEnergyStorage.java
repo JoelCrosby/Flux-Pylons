@@ -1,6 +1,6 @@
 package com.joelcrosby.fluxpylons.energy;
 
-import net.minecraftforge.energy.EnergyStorage;
+import net.neoforged.neoforge.energy.EnergyStorage;
 
 public class FluxEnergyStorage extends EnergyStorage {
 
@@ -23,7 +23,7 @@ public class FluxEnergyStorage extends EnergyStorage {
     public void setMaxExtract(int maxExtract) {
         this.maxExtract = maxExtract;
     }
-    
+
     @SuppressWarnings("unused")
     public int extractInternal(int maxExtract, boolean simulate) {
         var energyExtracted = Math.min(this.energy, maxExtract);

@@ -1,47 +1,38 @@
 package com.joelcrosby.fluxpylons.network.packets;
 
+import com.joelcrosby.fluxpylons.FluxPylons;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.common.BaseFilterContainerMenu;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.common.BaseFilterItem;
 import net.minecraft.core.Direction;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.function.Supplier;
+public record PacketUpdateFilter(boolean isDenyList, boolean matchNbt, Direction interactionSide) implements CustomPacketPayload {
 
-public class PacketUpdateFilter {
-    private final boolean isDenyList;
-    private final boolean matchNbt;
-    private final Direction interactionSide;
+    public static final CustomPacketPayload.Type<PacketUpdateFilter> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "update_filter"));
 
-    public PacketUpdateFilter(boolean isDenyList, boolean compareNBT, Direction interactionSide) {
-        this.isDenyList = isDenyList;
-        this.matchNbt = compareNBT;
-        this.interactionSide = interactionSide;
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketUpdateFilter> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.BOOL, PacketUpdateFilter::isDenyList,
+            ByteBufCodecs.BOOL, PacketUpdateFilter::matchNbt,
+            Direction.STREAM_CODEC, PacketUpdateFilter::interactionSide,
+            PacketUpdateFilter::new);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public static void encode(PacketUpdateFilter msg, FriendlyByteBuf buffer) {
-        buffer.writeBoolean(msg.isDenyList);
-        buffer.writeBoolean(msg.matchNbt);
-        
-        if (msg.interactionSide != null) {
-            buffer.writeEnum(msg.interactionSide);
-        }
-    }
-
-    public static PacketUpdateFilter decode(FriendlyByteBuf buffer) {
-        return new PacketUpdateFilter(buffer.readBoolean(), buffer.readBoolean(), buffer.isReadable() ? buffer.readEnum(Direction.class) : null);
-    }
 
     public static class Handler {
-        public static void handle(PacketUpdateFilter msg, Supplier<NetworkEvent.Context> ctx) {
-            ctx.get().enqueueWork(() -> {
-                var player = ctx.get().getSender();
-                if (player == null)
-                    return;
+        public static void handle(final PacketUpdateFilter msg, IPayloadContext ctx) {
+            ctx.enqueueWork(() -> {
+                var player = ctx.player();
 
                 var container = player.containerMenu;
-                if (container == null)
-                    return;
 
                 if (container instanceof BaseFilterContainerMenu filterContainerMenu) {
                     var filterItem = filterContainerMenu.filterItem;
@@ -51,8 +42,6 @@ public class PacketUpdateFilter {
                     BaseFilterItem.setInteractionSide(filterItem, msg.interactionSide);
                 }
             });
-
-            ctx.get().setPacketHandled(true);
         }
     }
 }

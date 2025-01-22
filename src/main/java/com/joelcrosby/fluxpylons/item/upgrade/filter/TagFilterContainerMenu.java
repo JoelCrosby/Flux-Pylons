@@ -3,7 +3,7 @@ package com.joelcrosby.fluxpylons.item.upgrade.filter;
 import com.joelcrosby.fluxpylons.FluxPylonsContainerMenus;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.common.BaseFilterContainerMenu;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.common.FilterSlotHandler;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -12,8 +12,8 @@ import org.apache.commons.lang3.tuple.Pair;
 public class TagFilterContainerMenu extends BaseFilterContainerMenu {
     
     @SuppressWarnings("unused")
-    public TagFilterContainerMenu(int windowId, Inventory playerInventory, Player player, FriendlyByteBuf data) {
-        this(windowId, player, data.readItem());
+    public TagFilterContainerMenu(int windowId, Inventory playerInventory, Player player, RegistryFriendlyByteBuf data) {
+        this(windowId, player, ItemStack.OPTIONAL_STREAM_CODEC.decode(data));
     }
     
     public TagFilterContainerMenu(int windowId, Player player, ItemStack filterItem) {

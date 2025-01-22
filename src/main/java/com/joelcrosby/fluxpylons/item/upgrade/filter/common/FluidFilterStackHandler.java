@@ -1,8 +1,8 @@
 package com.joelcrosby.fluxpylons.item.upgrade.filter.common;
 
-import com.joelcrosby.fluxpylons.item.upgrade.filter.FluidFilterItem;
 import com.joelcrosby.fluxpylons.util.FluidHelper;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
@@ -10,18 +10,6 @@ import javax.annotation.Nonnull;
 public class FluidFilterStackHandler extends ItemFilterStackHandler {
     public FluidFilterStackHandler(int size, ItemStack itemStack) {
         super(size, itemStack);
-    }
-
-    @Override
-    public int getSlotLimit(int slot) {
-        return 1;
-    }
-
-    @Override
-    protected void onContentsChanged(int slot) {
-        if (!stack.equals(ItemStack.EMPTY)) {
-            FluidFilterItem.setInventory(stack, this);
-        }
     }
 
     @Override
@@ -38,7 +26,8 @@ public class FluidFilterStackHandler extends ItemFilterStackHandler {
             if (slotStack.isEmpty()) continue;
             
             var fluidSlotStack = FluidHelper.getFromStack(slotStack, true).getValue();
-            if (fluidSlotStack.isFluidEqual(fluidStack)) {
+
+            if (FluidStack.isSameFluidSameComponents(fluidSlotStack, fluidStack)) {
                 return false;
             }
         }
@@ -52,8 +41,8 @@ public class FluidFilterStackHandler extends ItemFilterStackHandler {
         validateSlotIndex(slot);
         
         var fluidStack = FluidHelper.getFromStack(stack, true).getKey();
-        this.stacks.set(slot, fluidStack);
+        this.setStackInSlot(slot, fluidStack);
         
-        onContentsChanged(slot);
+//        onContentsChanged(slot);
     }
 }

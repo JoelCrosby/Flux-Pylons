@@ -9,10 +9,12 @@ import com.joelcrosby.fluxpylons.item.upgrade.filter.FluidFilterItem;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.TagFilterItem;
 import com.joelcrosby.fluxpylons.pipe.network.NetworkManager;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphNode;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 
@@ -31,7 +33,7 @@ public class PipeUpgradeContainer implements Container {
             upgrades = cacheUpgrades();
 
             if (level != null && !level.isClientSide) {
-                NetworkManager.get(level).setDirty();
+                NetworkManager.get((ServerLevel) level).setDirty();
             }
         }
     };
@@ -104,17 +106,17 @@ public class PipeUpgradeContainer implements Container {
     }
 
     @Override
-    public ItemStack getItem(int slot) {
+    public @NotNull ItemStack getItem(int slot) {
         return items.getStackInSlot(slot);
     }
 
     @Override
-    public ItemStack removeItem(int slot, int amount) {
+    public @NotNull ItemStack removeItem(int slot, int amount) {
         return items.extractItem(slot, amount, false);
     }
 
     @Override
-    public ItemStack removeItemNoUpdate(int slot) {
+    public @NotNull ItemStack removeItemNoUpdate(int slot) {
         return items.extractItem(slot, items.getStackInSlot(slot).getCount(), true);
     }
 
@@ -131,7 +133,7 @@ public class PipeUpgradeContainer implements Container {
     }
     
     @Override
-    public void setItem(int slot, ItemStack stack) {
+    public void setItem(int slot, @NotNull ItemStack stack) {
         items.setStackInSlot(slot, stack);
     }
 
@@ -140,12 +142,12 @@ public class PipeUpgradeContainer implements Container {
         this.upgrades = cacheUpgrades();
 
         if (level != null && !level.isClientSide) {
-            NetworkManager.get(level).setDirty();
+            NetworkManager.get((ServerLevel) level).setDirty();
         }
     }
 
     @Override
-    public boolean stillValid(Player player) {
+    public boolean stillValid(@NotNull Player player) {
         return true;
     }
 

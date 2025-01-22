@@ -10,8 +10,9 @@ import com.joelcrosby.fluxpylons.pipe.network.graph.GraphDestinationType;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphNode;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphNodeType;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -19,30 +20,23 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
 
 
 public class RetrieverItem extends BaseFilterItem {
 
     @Override
-    public ItemStackHandler getItemStackHandler(ItemStack stack) {
-        return new ItemFilterStackHandler(FluxPylonsContainerMenus.BaseFilterContainerSlots, stack);
-    }
-
-    @Override
-    protected boolean defaultsToDenyList() {
-        return true;
+    protected int getSlots() {
+        return FluxPylonsContainerMenus.BaseFilterContainerSlots;
     }
 
     @Override
     protected boolean supportsInteractionSide() {
         return true;
     }
-    
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand interactionHand) {
         var stack = player.getItemInHand(interactionHand);
@@ -55,12 +49,12 @@ public class RetrieverItem extends BaseFilterItem {
     }
 
     public void openGui(Player player, ItemStack stack) {
-        var containerName = Component.translatable("container." + FluxPylons.ID + "." + ForgeRegistries.ITEMS.getKey(this).getPath());
+        var containerName = Component.translatable("container." + FluxPylons.ID + "." + BuiltInRegistries.ITEM.getKey(this).getPath());
 
-        NetworkHooks.openScreen((ServerPlayer) player,
+        player.openMenu(
                 new SimpleMenuProvider((windowId, playerInventory, playerEntity) ->
                         new ItemFilterContainerMenu(windowId, player, stack), containerName),
-                (buffer -> buffer.writeItem(stack))
+                (buffer -> ItemStack.STREAM_CODEC.encode(buffer, stack))
         );
     }
 
@@ -70,29 +64,34 @@ public class RetrieverItem extends BaseFilterItem {
         var source = level.getBlockEntity(node.getPos().relative(dir));
 
         if (source == null) return;
-        
+
         var isDenyList = BaseFilterItem.getIsDenyList(itemStack);
         var matchNbt = BaseFilterItem.getMatchNbt(itemStack);
         var inventory = BaseFilterItem.getInventory(itemStack);
         var interactionDir = BaseFilterItem.getInteractionSide(itemStack);
 
         var handlerDir = interactionDir == null ? dir.getOpposite() : interactionDir;
-        
-        var itemHandler = source
-                .getCapability(ForgeCapabilities.ITEM_HANDLER, handlerDir)
-                .orElse(null);
+
+        var capCache = BlockCapabilityCache.create(
+                Capabilities.ItemHandler.BLOCK,
+                level,
+                source.getBlockPos(),
+                handlerDir
+        );
+
+        var itemHandler = capCache.getCapability();
 
         if (itemHandler == null) return;
-        
+
         var rate = nodeType.getItemTransferRate();
 
         var destinations = node.getNetwork()
                 .getRelativeDestinations(GraphDestinationType.ITEMS, source.getBlockPos());
 
         var iterations = node.getNodeType() == GraphNodeType.ADVANCED ? 4 : 1;
-        
+
         for (var j = 0; j < iterations; j++) {
-            
+
             Outer:
             for (var destination : destinations) {
                 if (!destination.canExtract()) continue;
@@ -100,14 +99,22 @@ public class RetrieverItem extends BaseFilterItem {
                 var destinationEntity = destination.getConnectedBlockEntity();
                 if (destinationEntity == null) continue;
 
-                if (destination.getConnectedBlockEntity().getBlockPos() == source.getBlockPos()) {
+                var destinationPos = destination.getConnectedBlockEntity().getBlockPos();
+
+                if (destinationPos == source.getBlockPos()) {
                     throw new RuntimeException("destination cannot be the same as source");
                 }
 
                 var incomingDirection = destination.incomingDirection().getOpposite();
-                var destinationHandler = destinationEntity
-                        .getCapability(ForgeCapabilities.ITEM_HANDLER, incomingDirection)
-                        .orElse(null);
+
+                var incomingCache = BlockCapabilityCache.create(
+                        Capabilities.ItemHandler.BLOCK,
+                        level,
+                        destinationPos,
+                        incomingDirection
+                );
+
+                var destinationHandler = incomingCache.getCapability();
 
                 if (destinationHandler == null) continue;
 

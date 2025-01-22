@@ -5,7 +5,7 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeType;
 
 public class FluxPylonsRecipeType<T extends Recipe<?>> implements RecipeType<T> {
-    private ResourceLocation name;
+    private final ResourceLocation name;
 
     public FluxPylonsRecipeType(ResourceLocation name){
         this.name = name;

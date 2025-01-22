@@ -5,10 +5,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 public record GraphDestination(BlockPos receiver, Direction incomingDirection, GraphNode connectedNode, GraphDestinationType destinationType) {
 
+    @Nullable
     public BlockEntity getConnectedBlockEntity() {
         return connectedNode.getLevel().getBlockEntity(receiver);
     }

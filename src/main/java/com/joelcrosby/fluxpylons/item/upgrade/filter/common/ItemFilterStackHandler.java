@@ -1,15 +1,15 @@
 package com.joelcrosby.fluxpylons.item.upgrade.filter.common;
 
+import com.joelcrosby.fluxpylons.FluxPylonsDataComponents;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.ComponentItemHandler;
 import org.jetbrains.annotations.NotNull;
 
-public class ItemFilterStackHandler extends ItemStackHandler  {
+public class ItemFilterStackHandler extends ComponentItemHandler  {
     public final ItemStack stack;
 
     public ItemFilterStackHandler(int size, ItemStack itemStack) {
-        super(size);
+        super(itemStack, FluxPylonsDataComponents.INVENTORY.get(), size);
         this.stack = itemStack;
     }
 
@@ -18,12 +18,6 @@ public class ItemFilterStackHandler extends ItemStackHandler  {
         return 1;
     }
 
-    @Override
-    protected void onContentsChanged(int slot) {
-        if (!stack.equals(ItemStack.EMPTY)) {
-            BaseFilterItem.setInventory(stack, this);
-        }
-    }
 
     @Override
     public boolean isItemValid(int slot, @NotNull ItemStack stack) {
@@ -35,8 +29,8 @@ public class ItemFilterStackHandler extends ItemStackHandler  {
             var slotStack = getStackInSlot(i);
 
             if (slotStack.isEmpty()) continue;
-            
-            if (ItemHandlerHelper.canItemStacksStack(slotStack, stack)) {
+
+            if (ItemStack.isSameItemSameComponents(slotStack, stack)) {
                 return false;
             }
         }

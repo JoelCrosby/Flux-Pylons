@@ -8,22 +8,22 @@ import com.joelcrosby.fluxpylons.machine.SmelterContainerMenu;
 import com.joelcrosby.fluxpylons.machine.WasherContainerMenu;
 import com.joelcrosby.fluxpylons.pipe.PipeUpgradeContainerMenu;
 import com.joelcrosby.fluxpylons.pipe.PipeUpgradeItemStackHandler;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraftforge.common.extensions.IForgeMenuType;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 
 public class FluxPylonsContainerMenus {
-    public static final DeferredRegister<MenuType<?>> CONTAINER_REGISTRY = DeferredRegister.create(ForgeRegistries.MENU_TYPES, FluxPylons.ID);
-    
-    public static final RegistryObject<MenuType<CrateContainerMenu>> CRATE_CONTAINER_MENU = CONTAINER_REGISTRY.register("crate", () -> IForgeMenuType.create((id, inv, data) -> new CrateContainerMenu(id, inv.player, data.readBlockPos())));
-    public static final RegistryObject<MenuType<PipeUpgradeContainerMenu>> PIPE_UPGRADE_CONTAINER_MENU = CONTAINER_REGISTRY.register("upgrade", () -> IForgeMenuType.create((id, inv, data) -> new PipeUpgradeContainerMenu(id, inv.player, new PipeUpgradeItemStackHandler(), data)));
-    public static final RegistryObject<MenuType<ItemFilterContainerMenu>> UPGRADE_FILTER_CONTAINER_MENU = CONTAINER_REGISTRY.register("filter", () -> IForgeMenuType.create((id, inv, data) -> new ItemFilterContainerMenu(id, inv.player, data.readItem())));
-    public static final RegistryObject<MenuType<FluidFilterContainerMenu>> UPGRADE_FLUID_FILTER_CONTAINER_MENU = CONTAINER_REGISTRY.register("fluid_filter", () -> IForgeMenuType.create((id, inv, data) -> new FluidFilterContainerMenu(id, inv.player, data.readItem())));
-    public static final RegistryObject<MenuType<TagFilterContainerMenu>> UPGRADE_TAG_FILTER_CONTAINER_MENU = CONTAINER_REGISTRY.register("tag_filter", () -> IForgeMenuType.create((id, inv, data) -> new TagFilterContainerMenu(id, inv.player, data.readItem())));
-    public static final RegistryObject<MenuType<SmelterContainerMenu>> SMELTER_CONTAINER_MENU = CONTAINER_REGISTRY.register("smelter", () -> IForgeMenuType.create((id, inv, data) -> new SmelterContainerMenu(id, inv.player, data.readBlockPos())));
-    public static final RegistryObject<MenuType<WasherContainerMenu>> WASHER_CONTAINER_MENU = CONTAINER_REGISTRY.register("washer", () -> IForgeMenuType.create((id, inv, data) -> new WasherContainerMenu(id, inv.player, data.readBlockPos())));
-        
+    public static final DeferredRegister<MenuType<?>> CONTAINERS = DeferredRegister.create(Registries.MENU, FluxPylons.ID);
+
+    public static final DeferredHolder<MenuType<?>, MenuType<CrateContainerMenu>> CRATE_CONTAINER_MENU = CONTAINERS.register("crate", () -> IMenuTypeExtension.create((id, inv, data) -> new CrateContainerMenu(id, inv.player, data.readBlockPos())));
+    public static final DeferredHolder<MenuType<?>, MenuType<PipeUpgradeContainerMenu>> PIPE_UPGRADE_CONTAINER_MENU = CONTAINERS.register("upgrade", () -> IMenuTypeExtension.create((id, inv, data) -> new PipeUpgradeContainerMenu(id, inv.player, new PipeUpgradeItemStackHandler(), data)));
+    public static final DeferredHolder<MenuType<?>, MenuType<ItemFilterContainerMenu>> UPGRADE_FILTER_CONTAINER_MENU = CONTAINERS.register("filter", () -> IMenuTypeExtension.create((id, inv, data) -> new ItemFilterContainerMenu(id, inv, inv.player, data)));
+    public static final DeferredHolder<MenuType<?>, MenuType<FluidFilterContainerMenu>> UPGRADE_FLUID_FILTER_CONTAINER_MENU = CONTAINERS.register("fluid_filter", () -> IMenuTypeExtension.create((id, inv, data) -> new FluidFilterContainerMenu(id, inv, inv.player, data)));
+    public static final DeferredHolder<MenuType<?>, MenuType<TagFilterContainerMenu>> UPGRADE_TAG_FILTER_CONTAINER_MENU = CONTAINERS.register("tag_filter", () -> IMenuTypeExtension.create((id, inv, data) -> new TagFilterContainerMenu(id, inv, inv.player, data)));
+    public static final DeferredHolder<MenuType<?>, MenuType<SmelterContainerMenu>> SMELTER_CONTAINER_MENU = CONTAINERS.register("smelter", () -> IMenuTypeExtension.create((id, inv, data) -> new SmelterContainerMenu(id, inv.player, data.readBlockPos())));
+    public static final DeferredHolder<MenuType<?>, MenuType<WasherContainerMenu>> WASHER_CONTAINER_MENU = CONTAINERS.register("washer", () -> IMenuTypeExtension.create((id, inv, data) -> new WasherContainerMenu(id, inv.player, data.readBlockPos())));
+
     public static final int BaseFilterContainerSlots = 14;
 }

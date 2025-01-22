@@ -4,22 +4,21 @@ import com.joelcrosby.fluxpylons.FluxPylons;
 import com.joelcrosby.fluxpylons.gui.BasicButton;
 import com.joelcrosby.fluxpylons.gui.InteractionSideButton;
 import com.joelcrosby.fluxpylons.gui.ToggleButton;
-import com.joelcrosby.fluxpylons.network.PacketHandler;
 import com.joelcrosby.fluxpylons.network.packets.PacketGhostSlot;
 import com.joelcrosby.fluxpylons.network.packets.PacketUpdateFilter;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemHandlerHelper;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public class BaseFilterGui<TContainerMenu extends BaseFilterContainerMenu> extends AbstractContainerScreen<TContainerMenu> {
-    private static final ResourceLocation TEXTURE = new ResourceLocation(FluxPylons.ID, "textures/gui/filter.png");
-    
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/filter.png");
+
     protected final TContainerMenu container;
     protected final ItemStack filterItem;
     protected final BaseFilterItem item;
@@ -27,10 +26,10 @@ public class BaseFilterGui<TContainerMenu extends BaseFilterContainerMenu> exten
     protected boolean isDenyList;
     protected boolean matchNbt;
     protected Direction interactionSide;
-    
+
     public BaseFilterGui(TContainerMenu container, Inventory inv, Component titleIn) {
         super(container, inv, titleIn);
-        
+
         this.imageWidth = 176;
         this.imageHeight = 153;
         this.container = container;
@@ -43,30 +42,30 @@ public class BaseFilterGui<TContainerMenu extends BaseFilterContainerMenu> exten
         super.init();
 
         var allowDenyTextures = new ResourceLocation[] {
-            new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_allow.png"),
-            new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_deny.png"),
+            ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_allow.png"),
+            ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_deny.png"),
         };
 
         var allowDenyTooltips = new String[] {
                 "item.fluxpylons.filter.tooltip.allow",
                 "item.fluxpylons.filter.tooltip.deny",
         };
-        
+
         isDenyList = BaseFilterItem.getIsDenyList(filterItem);
-        
+
         var allowDenyX = getGuiLeft() + 8;
         var allowDenyY = getGuiTop() + 18;
 
         var allowDenyBtn = new ToggleButton(this, allowDenyX, allowDenyY, allowDenyTextures, allowDenyTooltips, isDenyList ? 1 : 0, (btn) -> {
-            isDenyList = !isDenyList;            
+            isDenyList = !isDenyList;
             ((ToggleButton) btn).setTexturePosition(isDenyList ? 1 : 0);
         });
 
         var matchNbtTextures = new ResourceLocation[] {
-            new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_match_nbt_off.png"),
-            new ResourceLocation(FluxPylons.ID, "textures/gui/buttons/btn_match_nbt_on.png"),
+            ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_match_nbt_off.png"),
+            ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "textures/gui/buttons/btn_match_nbt_on.png"),
         };
-        
+
         var matchNbtTooltips = new String[] {
                 "item.fluxpylons.filter.tooltip.ignore-nbt",
                 "item.fluxpylons.filter.tooltip.match-nbt",
@@ -90,7 +89,7 @@ public class BaseFilterGui<TContainerMenu extends BaseFilterContainerMenu> exten
         var interactionSideBtn = new InteractionSideButton(this, interactionSideX, interactionSideY, interactionSide, (btn) -> interactionSide = ((InteractionSideButton) btn).next());
 
         addRenderableWidget(allowDenyBtn);
-        
+
         if (item.supportsNbtMatch()) {
             addRenderableWidget(matchNbtBtn);
         }
@@ -101,30 +100,28 @@ public class BaseFilterGui<TContainerMenu extends BaseFilterContainerMenu> exten
     }
 
     @Override
-    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
-        super.render(poseStack, mouseX, mouseY, partialTicks);
+    public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTicks) {
+        super.render(gui, mouseX, mouseY, partialTicks);
 
         this.renderables.stream()
                 .filter(widget -> widget instanceof BasicButton)
-                .forEach(widget -> ((BasicButton) widget).onRenderToolTip(poseStack, mouseX, mouseY));
+                .forEach(widget -> ((BasicButton) widget).onRenderToolTip(gui, mouseX, mouseY));
     }
 
     @Override
-    protected void renderBg(PoseStack poseStack, float partialTicks, int mouseX, int mouseY) {
-        renderBackground(poseStack);
-        
+    protected void renderBg(GuiGraphics gui, float partialTicks, int mouseX, int mouseY) {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.setShaderTexture(0, TEXTURE);
 
-        this.blit(poseStack, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        gui.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
     }
 
     @Override
-    protected void renderLabels(PoseStack poseStack, int mouseX, int mouseY) {
-        this.font.draw(poseStack, this.playerInventoryTitle.getString(), 8, this.imageHeight - 96 + 2, 4210752);
-        this.font.draw(poseStack, this.title.getString(), 8, 6, 4210752);
+    protected void renderLabels(GuiGraphics gui, int mouseX, int mouseY) {
+        gui.drawString(this.font, this.playerInventoryTitle.getString(), 8, this.imageHeight - 96 + 2, 4210752, false);
+        gui.drawString(this.font, this.title.getString(), 8, 6, 4210752, false);
 
-        renderTooltip(poseStack, mouseX - leftPos, mouseY - topPos);
+        renderTooltip(gui, mouseX - leftPos, mouseY - topPos);
     }
 
     @Override
@@ -135,21 +132,22 @@ public class BaseFilterGui<TContainerMenu extends BaseFilterContainerMenu> exten
 
         var stack = this.menu.getCarried();
         stack = stack.copy().split(hoveredSlot.getMaxStackSize());
-        
-        if (ItemHandlerHelper.canItemStacksStack(stack, container.filterItem)) {
+
+        if (ItemStack.isSameItemSameComponents(stack, container.filterItem)) {
             return true;
         }
-        
-        hoveredSlot.set(stack); 
-        
-        PacketHandler.sendToServer(new PacketGhostSlot(hoveredSlot.index, stack, stack.getCount()));
+
+        hoveredSlot.set(stack);
+
+        PacketDistributor.sendToServer(new PacketGhostSlot(hoveredSlot.index, stack, stack.getCount()));
 
         return true;
     }
 
     @Override
     public void onClose() {
-        PacketHandler.sendToServer(new PacketUpdateFilter(isDenyList, matchNbt, interactionSide));
+        var dir = interactionSide == null ? Direction.DOWN : interactionSide;
+        PacketDistributor.sendToServer(new PacketUpdateFilter(isDenyList, matchNbt, dir));
         super.onClose();
     }
 }

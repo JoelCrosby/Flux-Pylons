@@ -23,11 +23,10 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.wrapper.SidedInvWrapper;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.wrapper.SidedInvWrapper;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.text.DecimalFormat;
@@ -43,10 +42,10 @@ public class Utility {
     }
 
     public static <T extends BlockEntity> T getExistingBlockEntity(Class<T> type, BlockGetter world, BlockPos pos) {
-        var tile = world.getExistingBlockEntity(pos);
+        var tile = world.getBlockEntity(pos);
         return type.isInstance(tile) ? (T) tile : null;
     }
-    
+
     public static ItemStack transferStackInSlot(AbstractContainerMenu container, IMergeItemStack merge, Player player, int slotIndex, Function<ItemStack, Pair<Integer, Integer>> predicate) {
         var inventoryStream = container.slots.stream().filter(slot -> slot.container != player.getInventory());
         var inventoryStart = (int) inventoryStream.count();
@@ -59,7 +58,7 @@ public class Utility {
         if (slot == null || !slot.hasItem()) {
             return ItemStack.EMPTY;
         }
-        
+
         var newStack = slot.getItem();
         var currentStack = newStack.copy();
 
@@ -71,12 +70,12 @@ public class Utility {
             // mergeItemStack with the slots that newStack should go into
             // return an empty stack if mergeItemStack fails
             var slots = predicate.apply(newStack);
-            
+
             if (slots != null) {
                 if (merge.mergeItemStack(newStack, slots.getLeft(), slots.getRight(), false))
                     return ItemStack.EMPTY;
             }
-            
+
             else if (slotIndex >= inventoryStart && slotIndex <= inventoryEnd) {
                 if (merge.mergeItemStack(newStack, hotbarStart, hotbarEnd + 1, false))
                     return ItemStack.EMPTY;
@@ -87,19 +86,19 @@ public class Utility {
             slot.setChanged();
             return ItemStack.EMPTY;
         }
-        
+
         if (newStack.isEmpty()) {
             slot.set(ItemStack.EMPTY);
         } else {
             slot.setChanged();
         }
-        
+
         if (newStack.getCount() == currentStack.getCount()) {
             return ItemStack.EMPTY;
         }
-        
+
         slot.onTake(player, newStack);
-        
+
         return currentStack;
     }
 
@@ -123,15 +122,17 @@ public class Utility {
     }
 
     public static void addTooltip(String name, List<Component> tooltip) {
+        if (tooltip == null) return;
+
         if (Screen.hasShiftDown()) {
             var content = I18n.get("info." + FluxPylons.ID + "." + name).split("\n");
             for (var s : content)
                 tooltip.add(Component.translatable(s).setStyle(Style.EMPTY.applyFormat(ChatFormatting.DARK_PURPLE)));
         } else {
             tooltip.add(Component.translatable("info." + FluxPylons.ID + ".hold").withStyle(ChatFormatting.GRAY)
-                    .append(Component.translatable(" "))
+                    .append(Component.literal(" "))
                     .append(Component.translatable("info." + FluxPylons.ID + ".shift").withStyle(ChatFormatting.AQUA)
-                            .append(Component.translatable(" "))
+                            .append(Component.literal(" "))
                             .append(Component.translatable("info." + FluxPylons.ID + ".more_info").withStyle(ChatFormatting.GRAY)
                             )));
         }
@@ -145,9 +146,9 @@ public class Utility {
         } else {
             tooltip.addAll(textComponents);
             tooltip.add(Component.translatable("info." + FluxPylons.ID + ".hold").withStyle(ChatFormatting.GRAY)
-                    .append(Component.translatable(" "))
+                    .append(Component.literal(" "))
                     .append(Component.translatable("info." + FluxPylons.ID + ".shift").withStyle(ChatFormatting.AQUA)
-                            .append(Component.translatable(" "))
+                            .append(Component.literal(" "))
                             .append(Component.translatable("info." + FluxPylons.ID + ".more_info").withStyle(ChatFormatting.GRAY)
             )));
         }
@@ -155,8 +156,8 @@ public class Utility {
 
     public static List<Component> tankTooltip(FluidStack fluidStack, int tankCapacity) {
         var amount = fluidStack.getAmount();
-        var name = fluidStack.getTranslationKey();
-        
+        var name = fluidStack.getDescriptionId();
+
         var tooltip = new ArrayList<Component>();
         var formatter = new DecimalFormat("#,###");
         var stringAmount = formatter.format(amount);
@@ -165,51 +166,39 @@ public class Utility {
         if (!fluidStack.isEmpty()) {
             tooltip.add(Component.translatable(name));
         }
-        
-        tooltip.add(Component.nullToEmpty(stringAmount + " mB / " + stringTankCapacity + " mB"));
-        
-        return tooltip;
-    }
 
-    public static ListTag stringListToTag(List<String> list) {
-        var nbtList = new ListTag();
-        
-        for (String string : list) {
-            var tag = new CompoundTag();
-            tag.putString("list", string);
-            nbtList.add(tag);
-        }
-        
-        return nbtList;
+        tooltip.add(Component.nullToEmpty(stringAmount + " mB / " + stringTankCapacity + " mB"));
+
+        return tooltip;
     }
 
     public static List<String> TagToStringList(ListTag nbtList) {
         var list = new ArrayList<String>();
-        
+
         for (int i = 0; i < nbtList.size(); i++) {
             CompoundTag tag = nbtList.getCompound(i);
             list.add(tag.getString("list"));
         }
-        
+
         return list;
     }
 
     public static boolean inBounds(int x, int y, int w, int h, double ox, double oy) {
         return ox >= x && ox <= x + w && oy >= y && oy <= y + h;
     }
-    
+
     public static <T> T getIndex(Set<T> set, int index) {
         var i = 0;
-        
+
         for (T entry:set) {
             if (index == i) return entry;
             i++;
         }
-        
+
         return null;
     }
 
-    public static boolean matchesFilterInventory(ItemStackHandler inventory, ItemStack itemStack, boolean matchNbt) {
+    public static boolean matchesFilterInventory(IItemHandler inventory, ItemStack itemStack, boolean matchNbt) {
         var isMatch = false;
 
         for (var i = 0; i < inventory.getSlots(); i++) {
@@ -218,9 +207,9 @@ public class Utility {
             if (slotStack.isEmpty()) continue;
 
             if (matchNbt) {
-                isMatch = ItemHandlerHelper.canItemStacksStack(itemStack, slotStack);
+                isMatch = ItemStack.isSameItemSameComponents(itemStack, slotStack);
             } else {
-                isMatch = itemStack.sameItem(slotStack);
+                isMatch = ItemStack.isSameItem(itemStack, slotStack);
             }
 
             if (isMatch) break;
@@ -229,7 +218,7 @@ public class Utility {
         return isMatch;
     }
 
-    public static boolean matchesFilterInventory(ItemStackHandler inventory, FluidStack fluidStack) {
+    public static boolean matchesFilterInventory(IItemHandler inventory, FluidStack fluidStack) {
         var isMatch = false;
 
         for (var i = 0; i < inventory.getSlots(); i++) {
@@ -241,7 +230,7 @@ public class Utility {
 
             if (slotFluidStack == null) continue;
 
-            isMatch = slotFluidStack.isFluidEqual(fluidStack);
+            isMatch = FluidStack.isSameFluidSameComponents(slotFluidStack, fluidStack);
 
             if (isMatch) break;
         }

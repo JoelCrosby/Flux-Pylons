@@ -3,8 +3,8 @@ package com.joelcrosby.fluxpylons.rendering;
 import com.joelcrosby.fluxpylons.pylon.PylonBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Matrix4f;
-import com.mojang.math.Vector3f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -17,7 +17,7 @@ public class PylonRenderer {
         var projectedView = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         var builder = buffer.getBuffer(RenderTypes.PYLON_BEAM);
 
-        while (tiles.size() > 0) {
+        while (!tiles.isEmpty()) {
             var tile = tiles.remove();
             var startPos = tile.getBlockPos();
 
@@ -57,16 +57,16 @@ public class PylonRenderer {
         var adjustedVec = adjustBeamToEyes(from, to, be);
         adjustedVec.mul(thickness); // Determines how thick the beam is
 
-        var startA = from.copy();
+        var startA = new Vector3f(from);
         startA.add(adjustedVec);
 
-        var startB = from.copy();
+        var startB = new Vector3f(from);
         startB.sub(adjustedVec);
 
-        var endA = to.copy();
+        var endA = new Vector3f(to);
         endA.add(adjustedVec);
 
-        var endB = to.copy();
+        var endB = new Vector3f(to);
         endB.sub(adjustedVec);
             
         renderQuad(builder, positionMatrix, r, g, b, alpha, v1, v2, startA, startB, endA, endB);
@@ -80,12 +80,11 @@ public class PylonRenderer {
     }
 
     private static void addVertex(Matrix4f positionMatrix, VertexConsumer builder, Vector3f vec, float r, float g, float b, float alpha, double v, int uv) {
-        builder.vertex(positionMatrix, vec.x(), vec.y(), vec.z())
-                .color(r, g, b, alpha)
-                .uv(uv, (float) v)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(15728880)
-                .endVertex();
+        builder.addVertex(positionMatrix, vec.x(), vec.y(), vec.z())
+                .setColor(r, g, b, alpha)
+                .setUv(uv, (float) v)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setUv2(uv, 15728880);
     }
 
     public static Vector3f adjustBeamToEyes(Vector3f from, Vector3f to, BlockEntity be) {
@@ -93,12 +92,12 @@ public class PylonRenderer {
         var player = Minecraft.getInstance().player;
         var P = new Vector3f((float) player.getX() - be.getBlockPos().getX(), (float) player.getEyeY() - be.getBlockPos().getY(), (float) player.getZ() - be.getBlockPos().getZ());
 
-        var PS = from.copy();
+        var PS = new Vector3f(from);
         PS.sub(P);
-        var SE = to.copy();
+        var SE = new Vector3f(to);
         SE.sub(from);
 
-        var adjustedVec = PS.copy();
+        var adjustedVec = new Vector3f(PS);
         adjustedVec.cross(SE);
         adjustedVec.normalize();
         

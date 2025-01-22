@@ -4,8 +4,8 @@ import com.joelcrosby.fluxpylons.Utility;
 import com.joelcrosby.fluxpylons.pipe.PipeBlock;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphNode;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphNodeType;
-import com.joelcrosby.fluxpylons.setup.Common;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
@@ -13,19 +13,17 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 
 
 public abstract class UpgradeItem extends Item {
     public UpgradeItem() {
-        super(new Item.Properties().tab(Common.TAB));
+        super(new Item.Properties().rarity(Rarity.UNCOMMON));
     }
 
     public abstract void update(ItemStack itemStack, GraphNode node, Direction dir, GraphNodeType nodeType);
-    
+
     @Override
     public InteractionResult useOn(UseOnContext context) {
         var level = context.getLevel();
@@ -38,7 +36,7 @@ public abstract class UpgradeItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        if (!player.isCrouching()) {
+        if (player != null && !player.isCrouching()) {
             return InteractionResult.FAIL;
         }
 
@@ -46,12 +44,7 @@ public abstract class UpgradeItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level worldIn, List<Component> tooltip, TooltipFlag flagIn) {
-        Utility.addTooltip(ForgeRegistries.ITEMS.getKey(this).getPath(), tooltip);
-    }
-
-    @Override
-    public Rarity getRarity(ItemStack itemStack) {
-        return Rarity.UNCOMMON;
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        Utility.addTooltip(BuiltInRegistries.ITEM.getKey(this).getPath(), tooltipComponents);
     }
 }

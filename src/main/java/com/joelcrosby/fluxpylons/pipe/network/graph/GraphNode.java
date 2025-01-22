@@ -5,9 +5,10 @@ import com.joelcrosby.fluxpylons.pipe.PipeUpgradeManager;
 import com.joelcrosby.fluxpylons.pipe.network.Network;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,19 +18,19 @@ import java.util.Map;
 import java.util.Objects;
 
 public class GraphNode {
-    protected final Level level;
+    protected final ServerLevel level;
     protected final BlockPos pos;
     protected final GraphNodeType nodeType;
     
     protected Network network;
 
-    public static final ResourceLocation ID = new ResourceLocation(FluxPylons.ID, "energy");
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "energy");
     
     private final Logger logger = LogManager.getLogger(getClass());
 
     public final Map<Direction, PipeUpgradeManager> upgrades = new HashMap<>();
     
-    public GraphNode(Level level, BlockPos pos, GraphNodeType nodeType) {
+    public GraphNode(ServerLevel level, BlockPos pos, GraphNodeType nodeType) {
         this.level = level;
         this.pos = pos;
         this.nodeType = nodeType;
@@ -39,7 +40,7 @@ public class GraphNode {
         }
     }
 
-    public Level getLevel() {
+    public ServerLevel getLevel() {
         return level;
     }
     
@@ -90,7 +91,7 @@ public class GraphNode {
         }
      }
     
-    public static GraphNode fromNbt(Level level, CompoundTag tag) {
+    public static GraphNode fromNbt(ServerLevel level, CompoundTag tag, HolderLookup.Provider provider) {
         var pos =  BlockPos.of(tag.getLong("pos"));
         var nodeTypeValue = tag.getInt("type");
         var nodeType = GraphNodeType.values()[nodeTypeValue];
@@ -101,19 +102,19 @@ public class GraphNode {
             var upgradeManager = new PipeUpgradeManager(result, dir);
             var dataTag = tag.get(dir.getSerializedName());
             
-            upgradeManager.deserializeNBT((CompoundTag) dataTag);
+            upgradeManager.deserializeNBT((CompoundTag) dataTag, provider);
             result.upgrades.put(dir, upgradeManager);
         }
         
         return result;
     }
     
-    public CompoundTag writeToNbt(CompoundTag tag) {
+    public CompoundTag writeToNbt(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putLong("pos", pos.asLong());
         tag.putInt("type", nodeType.ordinal());
 
         for (var pair : upgrades.entrySet()) {
-            tag.put(pair.getKey().getSerializedName(), pair.getValue().serializeNBT());
+            tag.put(pair.getKey().getSerializedName(), pair.getValue().serializeNBT(provider));
         }
         
         return tag;

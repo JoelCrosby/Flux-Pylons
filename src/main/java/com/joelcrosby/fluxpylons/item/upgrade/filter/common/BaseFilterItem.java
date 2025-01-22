@@ -1,7 +1,9 @@
 package com.joelcrosby.fluxpylons.item.upgrade.filter.common;
 
 import com.joelcrosby.fluxpylons.FluxPylons;
-import com.joelcrosby.fluxpylons.Utility;
+import com.joelcrosby.fluxpylons.FluxPylonsDataComponents;
+import com.joelcrosby.fluxpylons.data.InteractionSide;
+import com.joelcrosby.fluxpylons.data.TagList;
 import com.joelcrosby.fluxpylons.item.upgrade.UpgradeItem;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.TagFilterItem;
 import com.joelcrosby.fluxpylons.pipe.network.graph.GraphNode;
@@ -10,128 +12,88 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.items.ItemStackHandler;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public abstract class BaseFilterItem extends UpgradeItem {
-    
-    protected abstract ItemStackHandler getItemStackHandler(ItemStack stack);
+
+    protected abstract int getSlots();
 
     public abstract void openGui(Player player, ItemStack stack);
-    
+
     @Override
     public void update(ItemStack itemStack, GraphNode node, Direction dir, GraphNodeType nodeType) {
-        
+
     }
 
     @Override
     public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
         return false;
     }
-    
+
     public static void setIsDenyList(ItemStack stack, boolean isDenyList) {
-        stack.getOrCreateTag().putBoolean("is-deny-list", isDenyList);
-    }
-    
-    public static void setTags(ItemStack stack, List<String> tags) {
-        stack.getOrCreateTag().put("tags", Utility.stringListToTag(tags));
+        stack.set(FluxPylonsDataComponents.IS_DENY_LIST, isDenyList);
     }
 
-    public static List<String> getTags(ItemStack card) {
-        var tags = new ArrayList<String>();
-        var compound = card.getOrCreateTag();
-        
-        if (compound.contains("tags")) {
-            var listNBT = compound.getList("tags", Tag.TAG_COMPOUND);
-            tags = new ArrayList<>(Utility.TagToStringList(listNBT));
-        } else {
-            compound.put("tags", Utility.stringListToTag(tags));
-        }
-        
-        return tags;
+    public static void setTags(ItemStack stack, List<String> tags) {
+        stack.set(FluxPylonsDataComponents.TAGS, new TagList(tags));
     }
-    
+
+    public static List<String> getTags(ItemStack stack) {
+        return stack.getOrDefault(FluxPylonsDataComponents.TAGS, TagList.Empty).tags();
+    }
+
     public static boolean getIsDenyList(ItemStack stack) {
-        var compound = stack.getOrCreateTag();
-        
-        if (compound.contains("is-deny-list")) {
-            return compound.getBoolean("is-deny-list");
-        }
-        
-        if (!(stack.getItem() instanceof BaseFilterItem baseFilterItem)) {
-            return false;
-        }
-        
-        return baseFilterItem.defaultsToDenyList();
+        return stack.getOrDefault(FluxPylonsDataComponents.IS_DENY_LIST, true);
     }
 
     public static void setMatchNbt(ItemStack stack, boolean matchNbt) {
-        stack.getOrCreateTag().putBoolean("match-nbt", matchNbt);
+        stack.set(FluxPylonsDataComponents.MATCH_NBT, matchNbt);
     }
 
     public static boolean getMatchNbt(ItemStack stack) {
-        var compound = stack.getOrCreateTag();
-        return compound.getBoolean("match-nbt");
+        return stack.getOrDefault(FluxPylonsDataComponents.MATCH_NBT, false);
     }
 
     public static void setInteractionSide(ItemStack stack, @Nullable Direction direction) {
-        stack.getOrCreateTag().putString("interaction-side", direction == null ? "" : direction.getName());
+        stack.set(FluxPylonsDataComponents.INTERACTION_SIDE, new InteractionSide(direction));
     }
 
+    @Nullable
     public static Direction getInteractionSide(ItemStack stack) {
-        var compound = stack.getOrCreateTag();
-        return Direction.byName(compound.getString("interaction-side"));
-    }
-
-    public static ItemStackHandler setInventory(ItemStack stack, ItemStackHandler handler) {
-        stack.getOrCreateTag().put("inventory", handler.serializeNBT());
-        return handler;
+        return stack.has(FluxPylonsDataComponents.INTERACTION_SIDE)
+            ? Objects.requireNonNull(stack.get(FluxPylonsDataComponents.INTERACTION_SIDE)).direction()
+                : null;
     }
 
     protected boolean supportsNbtMatch() {
         return true;
     }
-    
+
     protected boolean supportsInteractionSide() {
         return false;
     }
-    
-    protected boolean defaultsToDenyList() {
-        return false;
-    }
 
-    public static ItemStackHandler getInventory(ItemStack stack) {
-        var compound = stack.getOrCreateTag();
+    public static ItemFilterStackHandler getInventory(ItemStack stack) {
         var item = (BaseFilterItem) stack.getItem();
-        var handler = item.getItemStackHandler(stack);
-
-        handler.deserializeNBT(compound.getCompound("inventory"));
-
-        if (compound.contains("inventory")) {
-            return handler;
-        }
-        
-        return setInventory(stack, item.getItemStackHandler(stack));
+        return new ItemFilterStackHandler(item.getSlots(), stack);
     }
-    
+
     @OnlyIn(Dist.CLIENT)
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag tooltipFlag) {
         var mc = Minecraft.getInstance();
 
-        if (world == null || mc.player == null) return;
+        if (mc.player == null) return;
 
         var sneakPressed = Screen.hasShiftDown();
 
@@ -141,14 +103,14 @@ public abstract class BaseFilterItem extends UpgradeItem {
             var matchNbt = getMatchNbt(stack);
 
             var prefix = "item.fluxpylons.filter.tooltip.";
-            
+
             var isDenyComponent = Component.translatable(prefix + (isDenyList ? "deny" : "allow")).setStyle(Style.EMPTY.applyFormat(isDenyList ? ChatFormatting.RED : ChatFormatting.DARK_GREEN));
             var matchNbtComponent = Component.translatable(prefix + (matchNbt ? "match-nbt" : "ignore-nbt")).setStyle(Style.EMPTY.applyFormat(matchNbt ? ChatFormatting.DARK_GREEN : ChatFormatting.RED));
-            
+
             var divider = Component.literal(" | ").setStyle(Style.EMPTY.applyFormat(ChatFormatting.DARK_GRAY));
-            
+
             tooltip.add(isDenyComponent.append(supportsNbtMatch() ? divider.append(matchNbtComponent) : Component.empty()));
-            
+
             if (stack.getItem() instanceof TagFilterItem) {
                 var tags = getTags(stack);
 
@@ -165,11 +127,11 @@ public abstract class BaseFilterItem extends UpgradeItem {
                     if (i == 0) {
                         tooltip.add(Component.literal(""));
                     }
-                    
+
                     tooltip.add(Component.translatable(stackInSlot.getItem().getDescriptionId()).withStyle(ChatFormatting.GOLD));
                 }
             }
-            
+
         } else {
             tooltip.add(Component.translatable("info." + FluxPylons.ID + ".hold").withStyle(ChatFormatting.GRAY)
                    .append(Component.literal(" "))

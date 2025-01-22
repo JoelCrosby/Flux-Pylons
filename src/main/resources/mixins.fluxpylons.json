@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "package": "com.joelcrosby.fluxpylons.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "mixins.fluxpylons.refmap.json",
+  "mixins": [],
+  "client": [],
+  "minVersion": "0.8"
+}

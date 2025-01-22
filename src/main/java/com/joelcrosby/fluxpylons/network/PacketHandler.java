@@ -2,58 +2,19 @@ package com.joelcrosby.fluxpylons.network;
 
 import com.joelcrosby.fluxpylons.FluxPylons;
 import com.joelcrosby.fluxpylons.network.packets.*;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.Level;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+
 
 public class PacketHandler {
-    private static final String PROTOCOL_VERSION = Integer.toString(2);
 
-    public static final SimpleChannel HANDLER = NetworkRegistry.ChannelBuilder
-            .named(new ResourceLocation(FluxPylons.ID, "main_network_channel"))
-            .clientAcceptedVersions(PROTOCOL_VERSION::equals)
-            .serverAcceptedVersions(PROTOCOL_VERSION::equals)
-            .networkProtocolVersion(() -> PROTOCOL_VERSION)
-            .simpleChannel();
+    public static void register(final RegisterPayloadHandlersEvent event) {
+        final PayloadRegistrar registrar = event.registrar(FluxPylons.ID);
 
-    @SuppressWarnings("UnusedAssignment")
-    public static void register() {
-        var id = 0;
-        
-        HANDLER.registerMessage(id++, PacketGhostSlot.class, PacketGhostSlot::encode, PacketGhostSlot::decode, PacketGhostSlot.Handler::handle);
-        HANDLER.registerMessage(id++, PacketUpdateFilter.class, PacketUpdateFilter::encode, PacketUpdateFilter::decode, PacketUpdateFilter.Handler::handle);
-        HANDLER.registerMessage(id++, PacketUpdateTagFilter.class, PacketUpdateTagFilter::encode, PacketUpdateTagFilter::decode, PacketUpdateTagFilter.Handler::handle);
-        HANDLER.registerMessage(id++, PacketOpenScreen.class, PacketOpenScreen::encode, PacketOpenScreen::decode, PacketOpenScreen.Handler::handle);
-        HANDLER.registerMessage(id++, PacketUpdatePipeManager.class, PacketUpdatePipeManager::encode, PacketUpdatePipeManager::decode, PacketUpdatePipeManager.Handler::handle);
-    }
-
-    public static void sendTo(Object msg, ServerPlayer player) {
-        if (!(player instanceof FakePlayer)) {
-            HANDLER.sendTo(msg, player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
-        }
-    }
-
-    public static void sendToAll(Object msg, Level level) {
-        for (var player : level.players()) {
-            if (!(player instanceof FakePlayer)) {
-                HANDLER.sendTo(msg, ((ServerPlayer) player).connection.connection, NetworkDirection.PLAY_TO_CLIENT);
-            }
-        }
-    }
-    
-    public static void sendVanillaPacket(Entity player, Packet<?> packet) {
-        if (player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.connection.send(packet);
-        }
-    }
-
-    public static void sendToServer(Object msg) {
-        HANDLER.sendToServer(msg);
+        registrar.playToServer(PacketGhostSlot.TYPE, PacketGhostSlot.STREAM_CODEC, PacketGhostSlot.Handler::handle);
+        registrar.playToServer(PacketOpenScreen.TYPE, PacketOpenScreen.STREAM_CODEC, PacketOpenScreen.Handler::handle);
+        registrar.playToServer(PacketUpdateFilter.TYPE, PacketUpdateFilter.STREAM_CODEC, PacketUpdateFilter.Handler::handle);
+        registrar.playToServer(PacketUpdateTagFilter.TYPE, PacketUpdateTagFilter.STREAM_CODEC, PacketUpdateTagFilter.Handler::handle);
+        registrar.playToServer(PacketUpdatePipeManager.TYPE, PacketUpdatePipeManager.STREAM_CODEC, PacketUpdatePipeManager.Handler::handle);
     }
 }

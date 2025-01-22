@@ -7,7 +7,6 @@ import com.joelcrosby.fluxpylons.container.BaseOutputSlot;
 import com.joelcrosby.fluxpylons.machine.common.MachineContainerMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
 public class WasherContainerMenu extends MachineContainerMenu<WasherBlockEntity> {
 
@@ -22,13 +21,15 @@ public class WasherContainerMenu extends MachineContainerMenu<WasherBlockEntity>
 
     @Override
     public void addOwnSlots() {
-        tile.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-            addSlot(new BaseInputSlot(handler, 0, 66, 35));
+        var handler = tile.getCapabilityHandler().itemHandler();
 
-            addSlot(new BaseOutputSlot(handler, 1, 128, 35));
-            addSlot(new BaseOutputSlot(handler, 2, 148, 35));
+        if (handler.isPresent()) {
+            addSlot(new BaseInputSlot(handler.get(), 0, 66, 35));
 
-            addSlot(new BaseEnergySlot(handler, 3, 8, 53));
-        });
+            addSlot(new BaseOutputSlot(handler.get(), 1, 128, 35));
+            addSlot(new BaseOutputSlot(handler.get(), 2, 148, 35));
+
+            addSlot(new BaseEnergySlot(handler.get(), 3, 8, 53));
+        }
     }
 }

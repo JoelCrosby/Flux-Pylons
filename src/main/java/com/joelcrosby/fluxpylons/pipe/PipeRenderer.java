@@ -6,29 +6,26 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.util.RandomSource;
-import net.minecraftforge.client.model.data.ModelData;
+import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.client.model.data.ModelData;
 
-import java.util.Random;
 
 public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity> {
 
-    private final Random random = new Random();
-    
     public PipeRenderer(BlockEntityRendererProvider.Context ctx) {
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void render(PipeBlockEntity tile, float partialTicks, PoseStack matrixStack, MultiBufferSource source, int light, int overlay) {
         if (tile.cover == null) {
             return;
         }
-        
+
         matrixStack.pushPose();
-        
+
         var renderer = Minecraft.getInstance().getBlockRenderer();
         var model = renderer.getBlockModel(tile.cover);
-        
+
         for (var layer : model.getRenderTypes(tile.cover, RandomSource.create(tile.cover.getSeed(tile.getBlockPos())), ModelData.EMPTY)) {
             renderer
                 .getModelRenderer()
@@ -46,7 +43,13 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity> {
                             ModelData.EMPTY,
                             layer);
         }
-        
+
         matrixStack.popPose();
+    }
+
+    @Override
+    public AABB getRenderBoundingBox(PipeBlockEntity blockEntity) {
+        // our render bounding box should always be the full block in case we're covered
+        return new AABB(blockEntity.getBlockPos());
     }
 }

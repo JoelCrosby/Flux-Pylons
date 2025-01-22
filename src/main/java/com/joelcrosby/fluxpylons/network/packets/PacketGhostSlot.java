@@ -1,43 +1,36 @@
 package com.joelcrosby.fluxpylons.network.packets;
 
+import com.joelcrosby.fluxpylons.FluxPylons;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.common.FilterSlotHandler;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-import java.util.function.Supplier;
+public record PacketGhostSlot(int slotNumber, ItemStack stack, int count) implements CustomPacketPayload {
 
-public class PacketGhostSlot {
-    private final int slotNumber;
-    private final ItemStack stack;
-    private final int count;
+    public static final Type<PacketGhostSlot> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "ghost_slot"));
 
-    public PacketGhostSlot(int slotNumber, ItemStack stack, int count) {
-        this.slotNumber = slotNumber;
-        this.stack = stack;
-        this.count = count;
-    }
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketGhostSlot> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, PacketGhostSlot::slotNumber,
+            ItemStack.OPTIONAL_STREAM_CODEC, PacketGhostSlot::stack,
+            ByteBufCodecs.INT, PacketGhostSlot::count,
+            PacketGhostSlot::new);
 
-    public static void encode(PacketGhostSlot msg, FriendlyByteBuf buffer) {
-        buffer.writeInt(msg.slotNumber);
-        buffer.writeItem(msg.stack);
-        buffer.writeInt(msg.count);
-    }
-
-    public static PacketGhostSlot decode(FriendlyByteBuf buffer) {
-        return new PacketGhostSlot(buffer.readInt(), buffer.readItem(), buffer.readInt());
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
     public static class Handler {
-        public static void handle(PacketGhostSlot msg, Supplier<NetworkEvent.Context> ctx) {
-            ctx.get().enqueueWork(() -> {
-                ServerPlayer sender = ctx.get().getSender();
-                if (sender == null) return;
+        public static void handle(PacketGhostSlot msg, final IPayloadContext ctx) {
+            ctx.enqueueWork(() -> {
+                var sender = ctx.player();
 
                 var container = sender.containerMenu;
-                
-                if (container == null) return;
 
                 var slot = container.slots.get(msg.slotNumber);
                 var stack = msg.stack;
@@ -48,8 +41,6 @@ public class PacketGhostSlot {
                     slot.set(stack);
                 }
             });
-
-            ctx.get().setPacketHandled(true);
         }
     }
 }

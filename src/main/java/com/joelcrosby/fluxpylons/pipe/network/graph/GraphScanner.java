@@ -4,8 +4,8 @@ import com.joelcrosby.fluxpylons.pipe.PipeBlock;
 import com.joelcrosby.fluxpylons.pipe.network.NetworkManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.Level;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraft.server.level.ServerLevel;
+import net.neoforged.neoforge.capabilities.Capabilities;
 
 import java.util.*;
 
@@ -30,12 +30,12 @@ public class GraphScanner {
         requests.add(request);
         allRequests.add(request);
     }
-    
-    public GraphScannerResult scanAt(Level level, BlockPos pos) {
+
+    public GraphScannerResult scanAt(ServerLevel level, BlockPos pos) {
         addRequest(new GraphScannerRequest(level, pos, null, null));
 
         GraphScannerRequest request;
-        
+
         while ((request = requests.poll()) != null) {
             singleScanAt(request);
         }
@@ -56,11 +56,11 @@ public class GraphScanner {
             if (!this.nodeType.equals(node.nodeType)) {
                 return;
             }
-            
+
             if (!foundNodes.add(node)) {
                 return;
             }
-            
+
             if (!currentNodes.contains(node)) {
                 newNodes.add(node);
             }
@@ -70,14 +70,14 @@ public class GraphScanner {
             request.setSuccessful(true);
 
             var blockState = node.getLevel().getBlockState(node.getPos());
-            
+
             for (var dir : Direction.values()) {
                 var prop = PipeBlock.DIRECTIONS.get(dir);
                 var connectionType = blockState.getValue(prop);
-                
+
                 if (!connectionType.isConnected())
                     continue;
-                
+
                 addRequest(new GraphScannerRequest(
                     request.getLevel(),
                     request.getPos().relative(dir),
@@ -85,7 +85,7 @@ public class GraphScanner {
                     request
                 ));
             }
-            
+
         } else if (request.getParent() != null) { // This can NOT be called on node positions! (causes problems with block entities getting invalidated/validates when it shouldn't)
             // We can NOT have the TE capability checks always run regardless of whether there was a node or not.
             // Otherwise, we have this loop: node gets placed -> network gets scanned -> TEs get checked -> it might check the TE we just placed
@@ -93,23 +93,34 @@ public class GraphScanner {
 
             var pos = request.getPos();
             var dir = request.getDirection();
+
+            if (dir == null) {
+                return;
+            }
+
             var facingDirection = dir.getOpposite();
-            
+
             var parentNode = NetworkManager.get(request.getLevel()).getNode(request.getParent().getPos());
             var blockEntity = request.getLevel().getBlockEntity(pos);
 
             if (blockEntity == null) {
                 return;
             }
-            
-            blockEntity.getCapability(ForgeCapabilities.ENERGY, facingDirection)
-                .ifPresent(handler -> destinations.add(new GraphDestination(pos, dir, parentNode, GraphDestinationType.ENERGY)));
-            
-            blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER, facingDirection)
-                .ifPresent(handler -> destinations.add(new GraphDestination(pos, dir, parentNode, GraphDestinationType.ITEMS)));
-            
-            blockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, facingDirection)
-                .ifPresent(handler -> destinations.add(new GraphDestination(pos, dir, parentNode, GraphDestinationType.FLUIDS)));
+
+            var state = blockEntity.getBlockState();
+            var level = request.getLevel();
+
+            if (level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, state, blockEntity, facingDirection) != null) {
+                destinations.add(new GraphDestination(pos, dir, parentNode, GraphDestinationType.ENERGY));
+            }
+
+            if (level.getCapability(Capabilities.ItemHandler.BLOCK, pos, state, blockEntity, facingDirection) != null) {
+                destinations.add(new GraphDestination(pos, dir, parentNode, GraphDestinationType.ITEMS));
+            }
+
+            if (level.getCapability(Capabilities.FluidHandler.BLOCK, pos, state, blockEntity, facingDirection) != null) {
+                destinations.add(new GraphDestination(pos, dir, parentNode, GraphDestinationType.FLUIDS));
+            }
         }
     }
 }

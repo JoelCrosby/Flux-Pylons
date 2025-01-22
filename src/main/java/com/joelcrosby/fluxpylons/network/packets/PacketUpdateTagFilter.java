@@ -1,42 +1,39 @@
 package com.joelcrosby.fluxpylons.network.packets;
 
-import com.google.common.collect.Lists;
+import com.joelcrosby.fluxpylons.FluxPylons;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.TagFilterContainerMenu;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.TagFilterItem;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.List;
-import java.util.function.Supplier;
 
-public class PacketUpdateTagFilter {
-    private final boolean isDenyList;
-    private final List<String> tags;
+import static com.joelcrosby.fluxpylons.data.Codecs.STRING_LIST_STREAM_CODEC;
 
-    public PacketUpdateTagFilter(boolean isDenyList, List<String> tags) {
-        this.isDenyList = isDenyList;
-        this.tags = tags;
-    }
+public record PacketUpdateTagFilter(boolean isDenyList, List<String> tags) implements CustomPacketPayload {
 
-    public static void encode(PacketUpdateTagFilter msg, FriendlyByteBuf buffer) {
-        buffer.writeBoolean(msg.isDenyList);
-        buffer.writeCollection(msg.tags, FriendlyByteBuf::writeUtf);
-    }
+    public static final CustomPacketPayload.Type<PacketUpdateTagFilter> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "update_tag_filter"));
 
-    public static PacketUpdateTagFilter decode(FriendlyByteBuf buffer) {
-        return new PacketUpdateTagFilter(buffer.readBoolean(), buffer.readCollection(Lists::newArrayListWithCapacity, FriendlyByteBuf::readUtf));
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketUpdateTagFilter> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.BOOL, PacketUpdateTagFilter::isDenyList,
+            STRING_LIST_STREAM_CODEC, PacketUpdateTagFilter::tags,
+            PacketUpdateTagFilter::new);
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
     public static class Handler {
-        public static void handle(PacketUpdateTagFilter msg, Supplier<NetworkEvent.Context> ctx) {
-            ctx.get().enqueueWork(() -> {
-                var player = ctx.get().getSender();
-                if (player == null)
-                    return;
+        public static void handle(PacketUpdateTagFilter msg, IPayloadContext ctx) {
+            ctx.enqueueWork(() -> {
+                var player = ctx.player();
 
                 var container = player.containerMenu;
-                if (container == null)
-                    return;
 
                 if (container instanceof TagFilterContainerMenu filterContainerMenu) {
                     var filterItem = filterContainerMenu.filterItem;
@@ -45,8 +42,6 @@ public class PacketUpdateTagFilter {
                     TagFilterItem.setTags(filterItem, msg.tags);
                 }
             });
-
-            ctx.get().setPacketHandled(true);
         }
     }
 }

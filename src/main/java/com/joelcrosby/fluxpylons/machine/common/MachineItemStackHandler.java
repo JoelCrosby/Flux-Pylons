@@ -2,22 +2,23 @@ package com.joelcrosby.fluxpylons.machine.common;
 
 import com.joelcrosby.fluxpylons.recipe.common.BaseRecipe;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.ItemStackHandler;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Arrays;
 
 public class MachineItemStackHandler extends ItemStackHandler {
     private final int inputSlots;
     private final int outputSlots;
     private final boolean hasEnergySlot;
-    
+
     private final SlotRange inputSlotRange;
     private final SlotRange outputSlotRange;
 
     public MachineItemStackHandler(int inputSlots, int outputSlots, boolean hasEnergySlot) {
         super(inputSlots + outputSlots + (hasEnergySlot ? 1 : 0));
-        
+
         this.inputSlots = inputSlots;
         this.outputSlots = outputSlots;
         this.hasEnergySlot = hasEnergySlot;
@@ -42,11 +43,11 @@ public class MachineItemStackHandler extends ItemStackHandler {
     public int getOutputSlots() {
         return this.outputSlots;
     }
-    
+
     public SlotRange getInputSlotRange() {
         return this.inputSlotRange;
     }
-    
+
     public SlotRange getOutputSlotRange() {
         return this.outputSlotRange;
     }
@@ -54,7 +55,7 @@ public class MachineItemStackHandler extends ItemStackHandler {
     public int getOutputSlot(int i) {
         return this.outputSlotRange.values()[i];
     }
-    
+
     public int getInputSlot(int i) {
         return this.inputSlotRange.values()[i];
     }
@@ -71,56 +72,56 @@ public class MachineItemStackHandler extends ItemStackHandler {
 
     public boolean canProcessInput(BaseRecipe recipe)
     {
-        for (var i = 0; i < recipe.inputItems.size(); i++) {
-            var output = recipe.inputItems.get(i);
-            var amount = output.getAmount();
+        for (var i = 0; i < recipe.ingredients.size(); i++) {
+            var output = Arrays.stream(recipe.ingredients.get(i).getItems()).findFirst().orElse(ItemStack.EMPTY);
+            var amount = output.getCount();
             var stack = getInputItemStack(i);
 
             if (stack.getCount() < amount) {
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     @Nonnull
     public ItemStack[] getOutputItemStacks()
     {
         var stacks = new ItemStack[outputSlots];
-        
+
         for (var i = 0; i < outputSlots; i++) {
             stacks[i] = this.stacks.get(getOutputSlot(i));
         }
-        
+
         return stacks;
     }
 
     public int getAvailableOutputSlot(int amount, ItemStack itemStack)
     {
         var i = 0;
-        
+
         for (var stack : getOutputItemStacks()) {
-            var canInsert = stack.isEmpty() || stack.sameItem(itemStack);
+            var canInsert = stack.isEmpty() || ItemStack.isSameItemSameComponents(stack, itemStack);
             var stackHasSpace = stack.getCount() <= (stack.getMaxStackSize() - amount);
-            
+
             if (canInsert && stackHasSpace) {
                 return getOutputSlot(i);
             }
-            
+
             i++;
         }
 
         return -1;
     }
-    
+
     @Nullable
     public ItemStack getAvailableOutputStack(int amount, ItemStack itemStack)
     {
         for (var stack : getOutputItemStacks()) {
-            var canInsert = stack.isEmpty() || stack.sameItem(itemStack);
+            var canInsert = stack.isEmpty() || ItemStack.isSameItemSameComponents(stack, itemStack);
             var stackHasSpace = stack.getCount() <= (stack.getMaxStackSize() - amount);
-            
+
             if (canInsert && stackHasSpace) {
                 return stack.copy();
             }
@@ -134,20 +135,20 @@ public class MachineItemStackHandler extends ItemStackHandler {
         for (var stack : getOutputItemStacks()) {
             if (stack.getCount() > (stack.getMaxStackSize() - amount)) {
                 return false;
-            }    
+            }
         }
-        
+
         return true;
     }
 
     public boolean hasOutputSpaceForRecipe(BaseRecipe recipe)
     {
         for (var i = 0; i < recipe.outputItems.size(); i++) {
-            var output = recipe.outputItems.get(i);
+            var output = recipe.outputItems.get(i).getItemStack();
             var amount = output.getCount();
             var stack = getOutputItemStack(i);
 
-            var canInsert = stack.isEmpty() || stack.sameItem(output);
+            var canInsert = stack.isEmpty() || ItemStack.isSameItemSameComponents(stack, output);
             var stackHasSpace = stack.getCount() <= (stack.getMaxStackSize() - amount);
 
             if (!canInsert || !stackHasSpace) {

@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.apache.logging.log4j.LogManager;
@@ -14,18 +15,18 @@ import org.apache.logging.log4j.Logger;
 import java.util.Objects;
 
 public class PylonGraphNode {
-    protected final Level level;
+    protected final ServerLevel level;
     protected final BlockPos pos;
     protected final Direction direction;
     protected final PylonGraphNodeType nodeType;
     
     protected PylonNetwork network;
 
-    public static final ResourceLocation ID = new ResourceLocation(FluxPylons.ID, "pylon-node");
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "pylon-node");
     
     private final Logger logger = LogManager.getLogger(getClass());
 
-    public PylonGraphNode(Level level, BlockPos pos, Direction direction, PylonGraphNodeType nodeType) {
+    public PylonGraphNode(ServerLevel level, BlockPos pos, Direction direction, PylonGraphNodeType nodeType) {
         this.level = level;
         this.pos = pos;
         this.direction = direction;
@@ -33,7 +34,7 @@ public class PylonGraphNode {
         this.nodeType = nodeType;
     }
 
-    public Level getLevel() {
+    public ServerLevel getLevel() {
         return level;
     }
     
@@ -78,7 +79,7 @@ public class PylonGraphNode {
         level.sendBlockUpdated(pos, state, state, 1 | 2);
     }
     
-    public static PylonGraphNode fromNbt(Level level, CompoundTag tag) {
+    public static PylonGraphNode fromNbt(ServerLevel level, CompoundTag tag) {
         var pos =  BlockPos.of(tag.getLong("pos"));
         var nodeTypeValue = tag.getInt("type");
         var nodeType = PylonGraphNodeType.values()[nodeTypeValue];

@@ -1,10 +1,12 @@
 package com.joelcrosby.fluxpylons.machine.common;
 
 import com.joelcrosby.fluxpylons.recipe.common.BaseRecipe;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -12,10 +14,10 @@ import java.util.Arrays;
 import java.util.List;
 
 public class MachineFluidHandler implements IFluidHandler {
-    
+
     public List<FluidTank> inputTanks;
     public List<FluidTank> outputTanks;
-    
+
     public MachineFluidHandler(int inputTanks, int outputTanks) {
         this.inputTanks = setupTanks(inputTanks);
         this.outputTanks = setupTanks(outputTanks);
@@ -23,22 +25,22 @@ public class MachineFluidHandler implements IFluidHandler {
 
     private List<FluidTank> setupTanks(int count) {
         var tanks = new ArrayList<FluidTank>(count);
-        
+
         for (var i = 0; i < count; i++) {
             tanks.add(new FluidTank(getTankCapacity(i)));
         }
-        
+
         return tanks;
     }
-    
+
     public boolean hasOutputSpaceForRecipe(BaseRecipe recipe)
     {
-        if (outputTanks.size() == 0) return true;
-        
-        for (var i = 0; i < recipe.outputFluids.size(); i++) {
+        if (outputTanks.isEmpty()) return true;
+
+        for (var i = 0; i < recipe.getOutputItems().size(); i++) {
             var output = recipe.outputFluids.get(i);
-            var amount = output.getAmount();
-            
+            var amount = output.getFluidStack().getAmount();
+
             if (i < outputTanks.size()) {
                 var tank = outputTanks.get(i);
 
@@ -53,21 +55,22 @@ public class MachineFluidHandler implements IFluidHandler {
 
     public boolean canProcessInput(BaseRecipe recipe)
     {
-        if (inputTanks.size() == 0) return true;
-        
-        for (var i = 0; i < recipe.inputFluids.size(); i++) {
-            var output = recipe.inputFluids.get(i);
-            var amount = Arrays.stream(output.getFluids()).findFirst().orElse(FluidStack.EMPTY).getAmount();
+        if (inputTanks.isEmpty()) return true;
+
+        for (var i = 0; i < recipe.fluidIngredients.size(); i++) {
+            var output = Arrays.stream(recipe.fluidIngredients.get(i).getStacks()).findFirst().orElse(FluidStack.EMPTY);
+            var amount = output.getAmount();
             var tank = inputTanks.get(i);
 
             if (tank.getFluidAmount() < amount) {
                 return false;
             }
+
         }
 
         return true;
     }
-    
+
     @Override
     public int getTanks() {
         return inputTanks.size() + outputTanks.size();
@@ -76,48 +79,48 @@ public class MachineFluidHandler implements IFluidHandler {
     @NotNull
     @Override
     public FluidStack getFluidInTank(int tank) {
-        
+
         if (tank < inputTanks.size()) {
             return inputTanks.get(tank).getFluidInTank(0);
         }
-        
+
         if (tank >= inputTanks.size()) {
             var index = tank - inputTanks.size();
-            
+
             if (index < outputTanks.size()) {
                 return outputTanks.get(index).getFluidInTank(0);
             }
         }
-        
+
         return FluidStack.EMPTY;
     }
 
-    public void readFromNBT(CompoundTag compoundTag) {
+    public void readFromNBT(CompoundTag compoundTag, HolderLookup.Provider provider) {
         for (var i = 0; i < inputTanks.size(); i++) {
             var tankTag = compoundTag.getCompound("input-tank-" + i);
-            inputTanks.get(i).readFromNBT(tankTag);
+            inputTanks.get(i).readFromNBT(provider, tankTag);
         }
 
         for (var i = 0; i < outputTanks.size(); i++) {
             var tankTag = compoundTag.getCompound("output-tank-" + i);
-            outputTanks.get(i).readFromNBT(tankTag);
+            outputTanks.get(i).readFromNBT(provider, tankTag);
         }
     }
-    
-    public void writeToNBT(CompoundTag compoundTag) {
+
+    public void writeToNBT(CompoundTag compoundTag, HolderLookup.Provider provider) {
         for (var i = 0; i < inputTanks.size(); i++) {
             var tankTag = new CompoundTag();
-            inputTanks.get(i).writeToNBT(tankTag);
+            inputTanks.get(i).writeToNBT(provider, tankTag);
             compoundTag.put("input-tank-" + i, tankTag);
         }
 
         for (var i = 0; i < outputTanks.size(); i++) {
             var tankTag = new CompoundTag();
-            outputTanks.get(i).writeToNBT(tankTag);
+            outputTanks.get(i).writeToNBT(provider, tankTag);
             compoundTag.put("output-tank-" + i, tankTag);
         }
     }
-    
+
     @Override
     public int getTankCapacity(int tank) {
         return 1000 * 10;

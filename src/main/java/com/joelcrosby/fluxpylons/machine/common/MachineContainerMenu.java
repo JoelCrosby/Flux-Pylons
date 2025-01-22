@@ -14,7 +14,7 @@ public abstract class MachineContainerMenu<T extends MachineBlockEntity> extends
     public MachineContainerMenu(Class<T> entityClass, MenuType<?> menuType, int id, Player player, BlockPos pos) {
         super(menuType, id, player);
 
-        this.tile = Utility.getBlockEntity(entityClass, player.level, pos);
+        this.tile = Utility.getBlockEntity(entityClass, player.level(), pos);
 
         this.addOwnSlots();
         this.addPlayerInventory();
@@ -28,11 +28,6 @@ public abstract class MachineContainerMenu<T extends MachineBlockEntity> extends
     @Override
     protected Pair<Integer, Integer> getPlayerInventoryPosition() {
         return Pair.of(8, 84);
-    }
-
-    @Override
-    public boolean stillValid(Player player) {
-        return true;
     }
 
     public abstract void addOwnSlots();
