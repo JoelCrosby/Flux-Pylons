@@ -12,13 +12,12 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Optional;
+import java.util.Objects;
 
 public class WasherBlockEntity extends MachineBlockEntity {
 
@@ -39,18 +38,8 @@ public class WasherBlockEntity extends MachineBlockEntity {
         }
 
         @Override
-        public Optional<MachineItemStackHandler> itemHandler() {
-            return Optional.of(inventory);
-        }
-
-        @Override
         public MachineFluidHandler fluids() {
             return fluidInventory;
-        }
-
-        @Override
-        public Optional<MachineFluidHandler> fluidHandler() {
-            return Optional.of(fluidInventory);
         }
     };
 
@@ -75,10 +64,10 @@ public class WasherBlockEntity extends MachineBlockEntity {
     }
 
     public FluidStack getFluidStack() {
-        return capabilityHandler.fluids().getFluidInTank(0);
+        return Objects.requireNonNull(capabilityHandler.fluids()).getFluidInTank(0);
     }
 
     public int getFluidTankCapacity() {
-        return capabilityHandler.fluids().getTankCapacity(0);
+        return Objects.requireNonNull(capabilityHandler.fluids()).getTankCapacity(0);
     }
 }

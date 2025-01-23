@@ -3,7 +3,6 @@ package com.joelcrosby.fluxpylons.machine.common;
 import com.joelcrosby.fluxpylons.recipe.common.BaseRecipe;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
@@ -139,13 +138,13 @@ public class MachineFluidHandler implements IFluidHandler {
     @NotNull
     @Override
     public FluidStack drain(FluidStack resource, FluidAction action) {
-        return inputTanks.stream().findFirst().map(tank -> tank.drain(resource, action)).orElse(FluidStack.EMPTY);
+        return outputTanks.stream().findFirst().map(tank -> tank.drain(resource, action)).orElse(FluidStack.EMPTY);
     }
 
     @NotNull
     @Override
     public FluidStack drain(int maxDrain, FluidAction action) {
-        return inputTanks.stream().findFirst().map(tank -> tank.drain(maxDrain, action)).orElse(FluidStack.EMPTY);
+        return outputTanks.stream().findFirst().map(tank -> tank.drain(maxDrain, action)).orElse(FluidStack.EMPTY);
     }
 
     @NotNull

@@ -12,6 +12,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.fluids.crafting.FluidIngredient;
 
 import java.util.List;
@@ -22,9 +23,7 @@ import static com.joelcrosby.fluxpylons.recipe.common.RecipeCodecs.*;
 public class WasherRecipe extends BaseRecipe implements Recipe<RecipeInputContainer> {
     public static final RecipeType<WasherRecipe> RECIPE_TYPE = FluxPylonsRecipes.FluxPylonsRecipeTypes.WASHING.get();
 
-
-
-    public WasherRecipe(List<Ingredient> ingredients, List<FluidIngredient> fluidIngredients, List<RecipeItemData> outputItems, long energy) {
+    public WasherRecipe(List<SizedIngredient> ingredients, List<FluidIngredient> fluidIngredients, List<RecipeItemData> outputItems, long energy) {
         super(ingredients, fluidIngredients, outputItems, null, energy);
     }
 
@@ -34,7 +33,7 @@ public class WasherRecipe extends BaseRecipe implements Recipe<RecipeInputContai
     }
 
     public static final MapCodec<WasherRecipe> CODEC = RecordCodecBuilder.mapCodec(builder -> builder.group(
-                    Ingredient.LIST_CODEC_NONEMPTY
+                    SizedIngredient.FLAT_CODEC.listOf()
                             .fieldOf("ingredients")
                             .forGetter(e -> e.ingredients),
                     FluidIngredient.LIST_CODEC
@@ -45,7 +44,7 @@ public class WasherRecipe extends BaseRecipe implements Recipe<RecipeInputContai
             .apply(builder, WasherRecipe::new));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, WasherRecipe> STREAM_CODEC = StreamCodec.composite(
-            Ingredient.CONTENTS_STREAM_CODEC.apply(ByteBufCodecs.list()), WasherRecipe::getIngredients,
+            SizedIngredient.STREAM_CODEC.apply(ByteBufCodecs.list()), WasherRecipe::getItemIngredients,
             FluidIngredient.STREAM_CODEC.apply(ByteBufCodecs.list()), WasherRecipe::getFluidIngredients,
             RECIPE_ITEM_LIST_STREAM_CODEC, WasherRecipe::getOutputItems,
             ByteBufCodecs.VAR_LONG, WasherRecipe::getEnergy,

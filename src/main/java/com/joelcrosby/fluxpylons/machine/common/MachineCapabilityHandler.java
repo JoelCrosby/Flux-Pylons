@@ -4,49 +4,58 @@ import com.joelcrosby.fluxpylons.recipe.common.BaseRecipe;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.items.IItemHandler;
 
 import javax.annotation.Nullable;
-import java.util.Optional;
+import java.util.Objects;
 
 public abstract class MachineCapabilityHandler {
 
     @Nullable
     public abstract MachineItemStackHandler items();
-    public abstract Optional<MachineItemStackHandler> itemHandler();
 
     @Nullable
     public abstract MachineFluidHandler fluids();
-    public abstract Optional<MachineFluidHandler> fluidHandler();
 
     public boolean hasOutputSpaceForRecipe(BaseRecipe recipe)
     {
-        var items = true;
-        var fluids = true;
+        var canProcessItems = true;
+        var canProcessFluids = true;
 
-        if (items() != null) {
-            fluids = items().hasOutputSpaceForRecipe(recipe);
+        var items = items();
+        var fluids = fluids();
+
+        if (items != null) {
+            canProcessItems = items.hasOutputSpaceForRecipe(recipe);
         }
 
-        if (fluids() != null) {
-            fluids = fluids().hasOutputSpaceForRecipe(recipe);
+        if (fluids != null) {
+            canProcessFluids = fluids.hasOutputSpaceForRecipe(recipe);
         }
 
-        return items &&  fluids;
+        return canProcessItems && canProcessFluids;
     }
 
     public boolean canProcessInput(BaseRecipe recipe) {
-        var items = true;
-        var fluids = true;
+        var canProcessItems = true;
+        var canProcessFluids = true;
 
-        if (items() != null) {
-            fluids = items().canProcessInput(recipe);
+        var items = items();
+        var fluids = fluids();
+
+        if (items != null) {
+            canProcessItems = items.canProcessInput(recipe);
         }
 
-        if (fluids() != null) {
-            fluids = fluids().canProcessInput(recipe);
+        if (fluids != null) {
+            canProcessFluids = fluids.canProcessInput(recipe);
         }
 
-        return items &&  fluids;
+        return canProcessItems && canProcessFluids;
+    }
+
+    public IItemHandler getItemHandlerCapability() {
+        return Objects.requireNonNull(items()).getItemHandlerCapability();
     }
 
     public void saveAdditional(CompoundTag compound, HolderLookup.Provider provider) {

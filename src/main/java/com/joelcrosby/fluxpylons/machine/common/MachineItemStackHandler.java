@@ -2,6 +2,7 @@ package com.joelcrosby.fluxpylons.machine.common;
 
 import com.joelcrosby.fluxpylons.recipe.common.BaseRecipe;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
 import javax.annotation.Nonnull;
@@ -16,6 +17,8 @@ public class MachineItemStackHandler extends ItemStackHandler {
     private final SlotRange inputSlotRange;
     private final SlotRange outputSlotRange;
 
+    private final IItemHandler capabilityHandler;
+
     public MachineItemStackHandler(int inputSlots, int outputSlots, boolean hasEnergySlot) {
         super(inputSlots + outputSlots + (hasEnergySlot ? 1 : 0));
 
@@ -24,10 +27,12 @@ public class MachineItemStackHandler extends ItemStackHandler {
         this.hasEnergySlot = hasEnergySlot;
         this.inputSlotRange = calculateInputSlots();
         this.outputSlotRange = calculateOutputSlots();
+
+        this.capabilityHandler = new MachineItemHandlerCapability(this, inputSlotRange);
     }
 
     private SlotRange calculateInputSlots() {
-        return new SlotRange(0, this.inputSlots);
+        return new SlotRange(0, this.inputSlots - 1);
     }
 
     private SlotRange calculateOutputSlots() {
@@ -42,14 +47,6 @@ public class MachineItemStackHandler extends ItemStackHandler {
 
     public int getOutputSlots() {
         return this.outputSlots;
-    }
-
-    public SlotRange getInputSlotRange() {
-        return this.inputSlotRange;
-    }
-
-    public SlotRange getOutputSlotRange() {
-        return this.outputSlotRange;
     }
 
     public int getOutputSlot(int i) {
@@ -83,6 +80,10 @@ public class MachineItemStackHandler extends ItemStackHandler {
         }
 
         return true;
+    }
+
+    public IItemHandler getItemHandlerCapability() {
+        return this.capabilityHandler;
     }
 
     @Nonnull

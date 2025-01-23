@@ -4,8 +4,8 @@ import com.joelcrosby.fluxpylons.recipe.WasherRecipe;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.fluids.crafting.FluidIngredient;
 
 import java.util.HashMap;
@@ -14,12 +14,12 @@ import java.util.stream.Collectors;
 
 public abstract class BaseRecipe {
     public final long energy;
-    public final NonNullList<Ingredient> ingredients;
+    public final NonNullList<SizedIngredient> ingredients;
     public final NonNullList<FluidIngredient> fluidIngredients;
     public final NonNullList<RecipeItemData> outputItems;
     public final NonNullList<RecipeFluidData> outputFluids;
 
-    protected BaseRecipe(List<Ingredient> ingredients,
+    protected BaseRecipe(List<SizedIngredient> ingredients,
                          List<FluidIngredient> fluidIngredients,
                          List<RecipeItemData> outputItems,
                          List<RecipeFluidData> outputFluids,
@@ -41,7 +41,7 @@ public abstract class BaseRecipe {
         return this.outputItems;
     }
 
-    public NonNullList<Ingredient> getIngredients() {
+    public NonNullList<SizedIngredient> getItemIngredients() {
         return this.ingredients;
     }
 
@@ -84,7 +84,7 @@ public abstract class BaseRecipe {
         return ingredients.size() == matchedItems;
     }
 
-    private boolean isValidItemStack(Ingredient ingredient, ItemStack toMatch) {
+    private boolean isValidItemStack(SizedIngredient ingredient, ItemStack toMatch) {
         var items = ingredient.getItems();
 
         for (var item : items) {

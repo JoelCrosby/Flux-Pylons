@@ -9,17 +9,12 @@ import com.joelcrosby.fluxpylons.recipe.SmelterRecipe;
 import com.joelcrosby.fluxpylons.recipe.common.BaseRecipe;
 import com.joelcrosby.fluxpylons.recipe.common.RecipeInputContainer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Optional;
 
 public class SmelterBlockEntity extends MachineBlockEntity {
 
@@ -31,20 +26,10 @@ public class SmelterBlockEntity extends MachineBlockEntity {
             return inventory;
         }
 
-        @Override
-        public Optional<MachineItemStackHandler> itemHandler() {
-            return Optional.of(inventory);
-        }
-
         @Nullable
         @Override
         public MachineFluidHandler fluids() {
             return null;
-        }
-
-        @Override
-        public Optional<MachineFluidHandler> fluidHandler() {
-            return Optional.empty();
         }
     };
 

@@ -20,12 +20,14 @@ public class FluxPylonsCapabilities {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.ADV_PIPE.get(), (e, d) -> e.getUpgradeManager(d).pipeUpgradeContainer.getItems());
 
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, FluxPylonsBlockEntities.BASIC_PIPE.get(), PipeBlockEntity::getEnergyStorage);
+        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, FluxPylonsBlockEntities.ADV_PIPE.get(), PipeBlockEntity::getEnergyStorage);
+
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, FluxPylonsBlockEntities.WASHER.get(), (e, d) -> e.getEnergy());
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, FluxPylonsBlockEntities.SMELTER.get(), (e, d) -> e.getEnergy());
 
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.CRATE.get(), (e, d) -> e.items);
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.WASHER.get(), (e, d) -> e.getCapabilityHandler().items());
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.SMELTER.get(), (e, d) -> e.getCapabilityHandler().items());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.WASHER.get(), (e, d) -> e.getCapabilityHandler().getItemHandlerCapability());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.SMELTER.get(), (e, d) -> e.getCapabilityHandler().getItemHandlerCapability());
 
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, FluxPylonsBlockEntities.WASHER.get(), (e, d) -> e.getCapabilityHandler().fluids());
 

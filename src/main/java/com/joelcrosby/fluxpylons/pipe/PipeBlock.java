@@ -326,7 +326,6 @@ public class PipeBlock extends Block implements EntityBlock {
         return state;
     }
 
-    @SuppressWarnings("CommentedOutCode")
     public ConnectionType getConnectionType(Level world, BlockPos pos, Direction direction) {
         var offset = pos.relative(direction);
 
