@@ -15,7 +15,7 @@ public class RecipeCodecs {
     public static final Codec<RecipeItemData> RECIPE_ITEM_CODEC = RecordCodecBuilder.create((instance) -> instance.group(
             Codec.STRING.optionalFieldOf("item").forGetter(RecipeItemData::item),
             Codec.STRING.optionalFieldOf("tag").forGetter(RecipeItemData::tag),
-            Codec.INT.optionalFieldOf("amount", 1).forGetter(RecipeItemData::count),
+            Codec.INT.optionalFieldOf("count", 1).forGetter(RecipeItemData::count),
             Codec.FLOAT.optionalFieldOf("chance", 1.0f).forGetter(RecipeItemData::chance)
     )
             .apply(instance, (item, tag, count, chance) -> new RecipeItemData(item, Optional.empty(), tag, count, chance)));
@@ -32,6 +32,8 @@ public class RecipeCodecs {
             var count = buf.readInt();
             var chance = buf.readFloat();
             var itemstack = ItemStack.OPTIONAL_STREAM_CODEC.decode(buf);
+
+            itemstack.setCount(count);
 
             return new RecipeItemData(Optional.empty(), Optional.of(itemstack), Optional.empty(), count, chance);
         }

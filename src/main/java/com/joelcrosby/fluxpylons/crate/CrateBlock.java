@@ -17,12 +17,14 @@ import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 import java.util.List;
 
 public class CrateBlock extends BaseEntityBlock {
+    public static final MapCodec<CrateBlock> CODEC = BlockBehaviour.simpleCodec((p) -> new CrateBlock());
 
     public CrateBlock() {
         super(Properties.of().sound(SoundType.NETHERITE_BLOCK).strength(1.2f));
@@ -30,7 +32,7 @@ public class CrateBlock extends BaseEntityBlock {
 
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
-        return null;
+        return CODEC;
     }
 
     @Override

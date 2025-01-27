@@ -17,6 +17,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -34,8 +35,8 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public abstract class MachineBlock extends BaseEntityBlock {
-    public MachineBlock(Properties props) {
-        super(Properties.of());
+    public MachineBlock(Properties properties) {
+        super(properties);
 
         var state = this.defaultBlockState()
                 .setValue(BlockStateProperties.LIT, false)
@@ -78,6 +79,10 @@ public abstract class MachineBlock extends BaseEntityBlock {
         var itemCap = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
         var machineCap = entity.getCapabilityHandler().fluids();
 
+        if (machineCap == null || itemCap == null) {
+            return result;
+        }
+
         var toDrain = machineCap.getTankCapacity(0) - machineCap.getFluidInTank(0).getAmount();
         var simulatedDrain = itemCap.drain(toDrain, IFluidHandler.FluidAction.SIMULATE);
 
@@ -107,29 +112,38 @@ public abstract class MachineBlock extends BaseEntityBlock {
 
     @Override
     public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            var entity = world.getBlockEntity(pos);
+        if (state.is(newState.getBlock())) {
+            super.onRemove(state, world, pos, newState, isMoving);
+            return;
+        }
 
-            if (entity instanceof MachineBlockEntity machine) {
-                var handler = machine.getCapabilityHandler().items();
-                var container = new SimpleContainer(handler.getOutputSlots() + handler.getInputSlots());
+        var entity = world.getBlockEntity(pos);
 
-                for (var i = 0; i < handler.getInputSlots(); i++) {
-                    var stack = handler.getInputItemStack(i);
-                    container.addItem(stack);
-                }
+        if (entity instanceof MachineBlockEntity machine) {
+            var handler = machine.getCapabilityHandler().items();
 
-                for (var i = 0; i < handler.getOutputSlots(); i++) {
-                    var stack = handler.getOutputItemStack(i);
-                    container.addItem(stack);
-                }
-
-                Containers.dropContents(world, pos, container);
-                world.updateNeighbourForOutputSignal(pos, this);
+            if (handler == null) {
+                super.onRemove(state, world, pos, newState, isMoving);
+                return;
             }
 
-            super.onRemove(state, world, pos, newState, isMoving);
+            var container = new SimpleContainer(handler.getOutputSlots() + handler.getInputSlots());
+
+            for (var i = 0; i < handler.getInputSlots(); i++) {
+                var stack = handler.getInputItemStack(i);
+                container.addItem(stack);
+            }
+
+            for (var i = 0; i < handler.getOutputSlots(); i++) {
+                var stack = handler.getOutputItemStack(i);
+                container.addItem(stack);
+            }
+
+            Containers.dropContents(world, pos, container);
+            world.updateNeighbourForOutputSignal(pos, this);
         }
+
+        super.onRemove(state, world, pos, newState, isMoving);
     }
 
     @Override
@@ -140,6 +154,11 @@ public abstract class MachineBlock extends BaseEntityBlock {
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext blockPlaceContext) {
         return this.defaultBlockState().setValue(BlockStateProperties.FACING, blockPlaceContext.getHorizontalDirection().getOpposite());
+    }
+
+    @Override
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(BlockStateProperties.FACING, rotation.rotate(state.getValue(BlockStateProperties.FACING)));
     }
 
     @Override

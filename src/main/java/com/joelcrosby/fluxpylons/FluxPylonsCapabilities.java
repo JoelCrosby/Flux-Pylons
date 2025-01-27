@@ -2,6 +2,7 @@ package com.joelcrosby.fluxpylons;
 
 import com.joelcrosby.fluxpylons.pipe.IPipeConnectable;
 import com.joelcrosby.fluxpylons.pipe.PipeBlockEntity;
+import com.joelcrosby.fluxpylons.pylon.PylonBlockEntity;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.capabilities.BlockCapability;
@@ -21,6 +22,7 @@ public class FluxPylonsCapabilities {
 
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, FluxPylonsBlockEntities.BASIC_PIPE.get(), PipeBlockEntity::getEnergyStorage);
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, FluxPylonsBlockEntities.ADV_PIPE.get(), PipeBlockEntity::getEnergyStorage);
+        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, FluxPylonsBlockEntities.PYLON.get(), PylonBlockEntity::getEnergyStorage);
 
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, FluxPylonsBlockEntities.WASHER.get(), (e, d) -> e.getEnergy());
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, FluxPylonsBlockEntities.SMELTER.get(), (e, d) -> e.getEnergy());

@@ -2,6 +2,7 @@ package com.joelcrosby.fluxpylons.compat.jei;
 
 import com.joelcrosby.fluxpylons.FluxPylons;
 import com.joelcrosby.fluxpylons.FluxPylonsBlocks;
+import com.joelcrosby.fluxpylons.FluxPylonsItems;
 import com.joelcrosby.fluxpylons.compat.jei.category.SmeltingCategory;
 import com.joelcrosby.fluxpylons.compat.jei.category.WashingCategory;
 import com.joelcrosby.fluxpylons.compat.jei.container.SmelterContainerHandler;
@@ -10,15 +11,23 @@ import com.joelcrosby.fluxpylons.machine.SmelterGui;
 import com.joelcrosby.fluxpylons.machine.WasherGui;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
+import mezz.jei.api.runtime.IJeiRuntime;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 @JeiPlugin
 public class FluxPylonsJeiPlugin implements IModPlugin {
@@ -29,32 +38,32 @@ public class FluxPylonsJeiPlugin implements IModPlugin {
         return ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "jei_plugin");
     }
 
-//    @Override
-//    public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
-//        var recipeRegistry = jeiRuntime.getRecipeManager();
-//        var recipeManager = Minecraft.getInstance().level.getRecipeManager();
-//        var hiddenRecipes = new ArrayList<CraftingRecipe>();
-//
-//        var itemNames = List.of(
-//            FluxPylonsItems.UPGRADE_EXTRACT.get(),
-//            FluxPylonsItems.UPGRADE_FLUID_EXTRACT.get(),
-//            FluxPylonsItems.UPGRADE_FILTER.get(),
-//            FluxPylonsItems.UPGRADE_FLUID_FILTER.get(),
-//            FluxPylonsItems.UPGRADE_TAG_FILTER.get(),
-//            FluxPylonsItems.UPGRADE_RETRIEVER.get(),
-//            FluxPylonsItems.UPGRADE_FLUID_RETRIEVER.get()
-//        );
-//
-//        for (var item : itemNames) {
-//            var key = ResourceLocation.parse(item + "_clear_nbt");
-//            var holder = recipeManager.byKey(key);
-//            var recipe = holder.isPresent() ? holder.get(). : null;
-//
-//            manager.ifPresent((recipeHolder) -> hiddenRecipes.add((RecipeHolder<CraftingRecipe>) recipeHolder));
-//        }
-//
-//        recipeRegistry.hideRecipes(RecipeTypes.CRAFTING, hiddenRecipes);
-//    }
+    @SuppressWarnings("unchecked")
+    @Override
+    public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
+        var recipeRegistry = jeiRuntime.getRecipeManager();
+        var recipeManager = Objects.requireNonNull(Minecraft.getInstance().level).getRecipeManager();
+        var hiddenRecipes = new ArrayList<RecipeHolder<CraftingRecipe>>();
+
+        var itemNames = List.of(
+            FluxPylonsItems.UPGRADE_EXTRACT.get(),
+            FluxPylonsItems.UPGRADE_FLUID_EXTRACT.get(),
+            FluxPylonsItems.UPGRADE_FILTER.get(),
+            FluxPylonsItems.UPGRADE_FLUID_FILTER.get(),
+            FluxPylonsItems.UPGRADE_TAG_FILTER.get(),
+            FluxPylonsItems.UPGRADE_RETRIEVER.get(),
+            FluxPylonsItems.UPGRADE_FLUID_RETRIEVER.get()
+        );
+
+        for (var item : itemNames) {
+            var key = ResourceLocation.parse(item + "_clear_nbt");
+            var holder = recipeManager.byKey(key);
+
+            holder.ifPresent(h -> hiddenRecipes.add((RecipeHolder<CraftingRecipe>) h));
+        }
+
+        recipeRegistry.hideRecipes(RecipeTypes.CRAFTING, hiddenRecipes);
+    }
 
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {

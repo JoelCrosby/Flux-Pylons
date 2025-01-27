@@ -6,8 +6,8 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 
-@EventBusSubscriber
-public final class Events {
+@EventBusSubscriber(modid = FluxPylons.ID, bus = EventBusSubscriber.Bus.GAME)
+public class Events {
 
     @SubscribeEvent
     public static void onLevelTick(ServerTickEvent.Post e) {
