@@ -1,0 +1,10 @@
+{
+  "values": [
+    "fluxpylons:pipe",
+    "fluxpylons:adv_pipe",
+    "fluxpylons:crate",
+    "fluxpylons:pylon",
+    "fluxpylons:smelter",
+    "fluxpylons:washer"
+  ]
+}

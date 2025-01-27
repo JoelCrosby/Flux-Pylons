@@ -1,6 +1,5 @@
 package com.joelcrosby.fluxpylons.compat.jei.container;
 
-import com.google.common.collect.Lists;
 import com.joelcrosby.fluxpylons.compat.jei.category.WashingCategory;
 import com.joelcrosby.fluxpylons.machine.WasherGui;
 import mezz.jei.api.gui.builder.ITooltipBuilder;

@@ -17,8 +17,8 @@ public class FluxPylonsCapabilities {
         event.registerBlockEntity(FluxPylonsCapabilities.PipeConnectableCapability, FluxPylonsBlockEntities.BASIC_PIPE.get(), (e, d) -> e);
         event.registerBlockEntity(FluxPylonsCapabilities.PipeConnectableCapability, FluxPylonsBlockEntities.ADV_PIPE.get(), (e, d) -> e);
 
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.BASIC_PIPE.get(), (e, d) -> e.getUpgradeManager(d).pipeUpgradeContainer.getItems());
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.ADV_PIPE.get(), (e, d) -> e.getUpgradeManager(d).pipeUpgradeContainer.getItems());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.BASIC_PIPE.get(), PipeBlockEntity::getItemHandler);
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.ADV_PIPE.get(), PipeBlockEntity::getItemHandler);
 
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, FluxPylonsBlockEntities.BASIC_PIPE.get(), PipeBlockEntity::getEnergyStorage);
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, FluxPylonsBlockEntities.ADV_PIPE.get(), PipeBlockEntity::getEnergyStorage);

@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.items.IItemHandler;
 
 public class PipeBlockEntity extends BlockEntity implements IPipeConnectable {
     private boolean unloaded;
@@ -35,7 +36,21 @@ public class PipeBlockEntity extends BlockEntity implements IPipeConnectable {
         return this.pipeType;
     }
 
+    public IItemHandler getItemHandler(Direction dir) {
+        var manager = getUpgradeManager(dir);
+
+        if (manager == null) {
+            return null;
+        }
+
+        return manager.pipeUpgradeContainer.getItems();
+    }
+
     public PipeUpgradeManager getUpgradeManager(Direction dir) {
+        if (level == null || level.isClientSide()) {
+            return null;
+        }
+
         var node = NetworkManager.get(level).getNode(worldPosition);
 
         if (node == null) {
@@ -74,6 +89,7 @@ public class PipeBlockEntity extends BlockEntity implements IPipeConnectable {
                 }
             }
         }
+
         return null;
     }
 

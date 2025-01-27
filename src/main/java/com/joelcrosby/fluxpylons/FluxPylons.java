@@ -28,6 +28,7 @@ public class FluxPylons
 
         bus.addListener(PacketHandler::register);
         bus.addListener(FluxPylonsCapabilities::registerCapabilities);
+        bus.addListener(FluxPylonsDataGenerators::gatherData);
 
         if (FMLLoader.getDist().isClient()) {
             bus.addListener(Client::setup);

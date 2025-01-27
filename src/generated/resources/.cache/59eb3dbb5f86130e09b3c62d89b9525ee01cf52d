@@ -1,0 +1,7 @@
+// 1.21.1	2025-01-27T10:34:45.96926166	Loot Tables
+b7610acf10c727a6ce66b25af624c5016d44cf6a data/fluxpylons/loot_table/blocks/adv_pipe.json
+902bd577d42d639702efa60393b4cdc044c8e91d data/fluxpylons/loot_table/blocks/crate.json
+d03ea58d8a2a0a0fd0ccf4cb33545caa53fffc25 data/fluxpylons/loot_table/blocks/pipe.json
+904de1ebacadffa377fa5c1aafc3cee7bb4a9f20 data/fluxpylons/loot_table/blocks/pylon.json
+5d8c3a731f3f7ef6c4e798028b0c44847287630d data/fluxpylons/loot_table/blocks/smelter.json
+c837013190fd43e56d5d306a5f26513831585054 data/fluxpylons/loot_table/blocks/washer.json
