@@ -26,10 +26,10 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.Optional;
 
 public abstract class MachineBlockEntity extends BlockEntity implements MenuProvider {
-
-    private final FluxEnergyStorage energyStorage;
 
     private final BlockEntityType<?> type;
 
@@ -41,24 +41,52 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
     public MachineBlockEntity(BlockEntityType<?> type,  BlockPos pos, BlockState state) {
         super(type, pos, state);
         this.type = type;
-
-        this.energyStorage = new FluxEnergyStorage(100000, 1000, 0);
     }
 
     public abstract MachineCapabilityHandler getCapabilityHandler();
 
     @Nullable
-    public abstract BaseRecipe getRecipe(Level level, RecipeInputContainer container) ;
+    public abstract BaseRecipe getRecipe(Level level, RecipeInputContainer container);
+
+    protected abstract Optional<FluxEnergyStorage> getEnergyStorage();
 
     @Override
     public Component getDisplayName() {
-        var name = BlockEntityType.getKey(type).getPath();
+        var name = Objects.requireNonNull(BlockEntityType.getKey(type)).getPath();
         return Component.translatable("container." + FluxPylons.ID + "." + name);
     }
 
     @Override
     public void setRemoved() {
         super.setRemoved();
+    }
+
+    public Optional<FluidStack> getFluidStack() {
+        return getFluidStack(0);
+    }
+
+    public Optional<FluidStack> getFluidStack(int tank) {
+        var fluidHandler = getCapabilityHandler().fluids();
+
+        if (fluidHandler != null) {
+            return Optional.of(fluidHandler.getFluidInTank(tank));
+        }
+
+        return Optional.empty();
+    }
+
+    public int getFluidTankCapacity() {
+        return getFluidTankCapacity(0);
+    }
+
+    public int getFluidTankCapacity(int tank) {
+        var fluidHandler = getCapabilityHandler().fluids();
+
+        if (fluidHandler != null) {
+            return fluidHandler.getTankCapacity(tank);
+        }
+
+        return 0;
     }
 
     public void tick(Level level, BlockPos pos, BlockState state) {
@@ -192,9 +220,11 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
         if (entity.getEnergyItemCapability() != null) {
             var itemEnergyStorage = entity.getEnergyItemCapability();
 
-            if (entity.energyStorage.getEnergyStored() < entity.energyStorage.getMaxEnergyStored()) {
-                entity.energyStorage.receiveEnergy(itemEnergyStorage.extractEnergy(200, false), false);
-            }
+            entity.getEnergyStorage().ifPresent(energy -> {
+                if (energy.getEnergyStored() < energy.getMaxEnergyStored()) {
+                    energy.receiveEnergy(itemEnergyStorage.extractEnergy(200, false), false);
+                }
+            });
         }
     }
 
@@ -204,7 +234,7 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
     }
 
     public IEnergyStorage getEnergy() {
-        return energyStorage;
+        return getEnergyStorage().orElseThrow();
     }
 
     public void consumeEnergy(int amount) {
@@ -215,8 +245,8 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
             toExtract = toExtract - itemCap.extractEnergy(toExtract, false);
         }
 
-        if (energyStorage != null) {
-            toExtract = toExtract - energyStorage.extractInternal(toExtract, false);
+        if (getEnergyStorage().isPresent()) {
+            toExtract = toExtract - getEnergyStorage().get().extractInternal(toExtract, false);
         }
 
         consumedEnergy = consumedEnergy + amount - toExtract;
@@ -225,6 +255,9 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
     @Nullable
     public IEnergyStorage getEnergyItemCapability() {
         var handler = getCapabilityHandler().items();
+
+        if (handler == null) return null;
+
         var energySlot = handler.getSlots() - 1;
         var energyStack = handler.getStackInSlot(energySlot);
 
@@ -232,7 +265,11 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
     }
 
     public boolean canConsumeEnergy() {
-        return energyStorage.getEnergyStored() > 0;
+        if (getEnergyStorage().isPresent()) {
+            return getEnergyStorage().get().getEnergyStored() > 0;
+        }
+
+        return false;
     }
 
     public int getProgress() {
@@ -257,7 +294,7 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
 
     @Override
     public void loadAdditional(CompoundTag compound, HolderLookup.Provider provider) {
-        this.energyStorage.setEnergyStored(compound.getInt("energy"));
+        getEnergyStorage().ifPresent(energy -> energy.setEnergyStored(compound.getInt("energy")));
 
         var inventory = compound.getCompound("inventory");
         var handler = getCapabilityHandler().items();
@@ -282,8 +319,7 @@ public abstract class MachineBlockEntity extends BlockEntity implements MenuProv
     protected void saveAdditional(CompoundTag compound, HolderLookup.Provider provider) {
         super.saveAdditional(compound, provider);
 
-        compound.putInt("energy", energyStorage.getEnergyStored());
-
+        getEnergyStorage().ifPresent(energy -> compound.putInt("energy", energy.getEnergyStored()));
         getCapabilityHandler().saveAdditional(compound, provider);
 
         compound.putLong("maxEnergy", maxEnergy);

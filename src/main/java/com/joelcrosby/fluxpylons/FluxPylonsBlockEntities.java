@@ -1,6 +1,7 @@
 package com.joelcrosby.fluxpylons;
 
 
+import com.joelcrosby.fluxpylons.machine.BoilerBlockEntity;
 import net.minecraft.core.registries.Registries;
 import com.joelcrosby.fluxpylons.crate.CrateBlockEntity;
 import com.joelcrosby.fluxpylons.machine.SmelterBlockEntity;
@@ -34,5 +35,8 @@ public class FluxPylonsBlockEntities
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<WasherBlockEntity>> WASHER = BLOCK_ENTITIES_REGISTRY
             .register("washer", () -> BlockEntityType.Builder.of(WasherBlockEntity::new, FluxPylonsBlocks.WASHER.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BoilerBlockEntity>> BOILER = BLOCK_ENTITIES_REGISTRY
+            .register("boiler", () -> BlockEntityType.Builder.of(BoilerBlockEntity::new, FluxPylonsBlocks.BOILER.get()).build(null));
 
 }

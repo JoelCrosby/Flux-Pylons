@@ -1,5 +1,6 @@
 package com.joelcrosby.fluxpylons;
 
+import com.joelcrosby.fluxpylons.recipe.BoilerRecipe;
 import com.joelcrosby.fluxpylons.recipe.ClearNbtRecipe;
 import com.joelcrosby.fluxpylons.recipe.SmelterRecipe;
 import com.joelcrosby.fluxpylons.recipe.WasherRecipe;
@@ -19,6 +20,7 @@ public class FluxPylonsRecipes {
 
     public static final ResourceLocation RESOURCE_SMELTING = ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "smelting");
     public static final ResourceLocation RESOURCE_WASHING = ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "washing");
+    public static final ResourceLocation RESOURCE_BOILER = ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "boiler");
     public static final ResourceLocation RESOURCE_CLEAR_NBT = ResourceLocation.fromNamespaceAndPath(FluxPylons.ID, "clear_nbt");
 
 
@@ -27,12 +29,14 @@ public class FluxPylonsRecipes {
 
         public static final Supplier<RecipeType<SmelterRecipe>> SMELTING = RECIPE_TYPES_REGISTRY.register("smelting",  () -> new FluxPylonsRecipeType<>(RESOURCE_SMELTING));
         public static final Supplier<RecipeType<WasherRecipe>> WASHING = RECIPE_TYPES_REGISTRY.register("washing",  () -> new FluxPylonsRecipeType<>(RESOURCE_WASHING));
+        public static final Supplier<RecipeType<BoilerRecipe>> BOILER = RECIPE_TYPES_REGISTRY.register("boiler",  () -> new FluxPylonsRecipeType<>(RESOURCE_WASHING));
 
         public static final Supplier<RecipeType<ClearNbtRecipe>> CLEAR_NBT = RECIPE_TYPES_REGISTRY.register("clear_nbt",  () -> new FluxPylonsRecipeType<>(RESOURCE_WASHING));
     }
 
     public static final Supplier<RecipeSerializer<?>> SMELTING = registerSerializer(RESOURCE_SMELTING, SmelterRecipe.Serializer::new);
     public static final Supplier<RecipeSerializer<?>> WASHING = registerSerializer(RESOURCE_WASHING, WasherRecipe.Serializer::new);
+    public static final Supplier<RecipeSerializer<?>> BOILER = registerSerializer(RESOURCE_BOILER, BoilerRecipe.Serializer::new);
 
     public static final Supplier<RecipeSerializer<?>> CLEAR_NBT = registerSerializer(RESOURCE_CLEAR_NBT, ClearNbtRecipe.Serializer::new);
 

@@ -5,6 +5,7 @@
     "fluxpylons:crate",
     "fluxpylons:pylon",
     "fluxpylons:smelter",
-    "fluxpylons:washer"
+    "fluxpylons:washer",
+    "fluxpylons:boiler"
   ]
 }

@@ -1,6 +1,7 @@
 package com.joelcrosby.fluxpylons.machine;
 
 import com.joelcrosby.fluxpylons.FluxPylonsBlockEntities;
+import com.joelcrosby.fluxpylons.energy.FluxEnergyStorage;
 import com.joelcrosby.fluxpylons.machine.common.MachineBlockEntity;
 import com.joelcrosby.fluxpylons.machine.common.MachineCapabilityHandler;
 import com.joelcrosby.fluxpylons.machine.common.MachineFluidHandler;
@@ -18,6 +19,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class WasherBlockEntity extends MachineBlockEntity {
 
@@ -63,11 +65,8 @@ public class WasherBlockEntity extends MachineBlockEntity {
         return WasherRecipe.getRecipe(level, input);
     }
 
-    public FluidStack getFluidStack() {
-        return Objects.requireNonNull(capabilityHandler.fluids()).getFluidInTank(0);
-    }
-
-    public int getFluidTankCapacity() {
-        return Objects.requireNonNull(capabilityHandler.fluids()).getTankCapacity(0);
+    @Override
+    protected Optional<FluxEnergyStorage> getEnergyStorage() {
+        return Optional.of(new FluxEnergyStorage(100000, 1000, 0));
     }
 }

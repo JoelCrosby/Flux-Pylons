@@ -1,0 +1,8 @@
+{
+  "type": "fluxpylons:boiler",
+  "fuel": {
+    "item": "minecraft:coal_block"
+  },
+  "temperature": 1000,
+  "ticks": 3600
+}

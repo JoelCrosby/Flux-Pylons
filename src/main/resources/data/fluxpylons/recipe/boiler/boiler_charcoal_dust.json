@@ -1,0 +1,18 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "registry": "minecraft:item",
+        "tag": "c:dusts/charcoal"
+      }
+    }
+  ],
+  "type": "fluxpylons:boiler",
+  "fuel": {
+    "tag": "c:dusts/charcoal"
+  },
+  "temperature": 900,
+  "ticks": 3600
+}

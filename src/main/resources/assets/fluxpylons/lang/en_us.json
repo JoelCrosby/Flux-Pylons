@@ -1,13 +1,14 @@
 {
   "itemGroup.fluxpylons": "Flux Pylons",
-  
+
   "block.fluxpylons.crate": "Crate",
   "block.fluxpylons.pipe": "Dynamic Conduit",
   "block.fluxpylons.adv_pipe": "Advanced Dynamic Conduit",
   "block.fluxpylons.pylon": "Flux Pylon",
   "block.fluxpylons.smelter": "Smelter",
   "block.fluxpylons.washer": "Industrial Washer",
-  
+  "block.fluxpylons.boiler": "Coal Fired Boiler",
+
   "item.fluxpylons.wrench": "Dynamic Wrench",
   "item.fluxpylons.upgrade_extract": "Extract Card",
   "item.fluxpylons.upgrade_fluid_extract": "Fluid Extract Card",
@@ -18,9 +19,9 @@
   "item.fluxpylons.upgrade_fluid_retriever": "Fluid Retriever Card",
 
   "item.fluxpylons.ingot_conductive_alloy": "Conductive Alloy Ingot",
-  
+
   "item.fluxpylons.filter.tooltip.open-menu": "Right click to open Card menu",
-  
+
   "item.fluxpylons.filter.tooltip.allow": "Allow List",
   "item.fluxpylons.filter.tooltip.deny": "Deny List",
   "item.fluxpylons.filter.tooltip.match-nbt": "Match NBT",
@@ -38,10 +39,11 @@
   "item.fluxpylons.filter.tooltip.interaction-side-south": "Interaction Side: South",
   "item.fluxpylons.filter.tooltip.interaction-side-west": "Interaction Side: West",
   "item.fluxpylons.filter.tooltip.interaction-side-east": "Interaction Side: East",
-  
+
   "container.fluxpylons.crate": "Crate",
   "container.fluxpylons.smelter": "Alloy Smelter",
   "container.fluxpylons.washer": "Industrial Washer",
+  "container.fluxpylons.boiler": "Coal Fired Boiler",
   "container.fluxpylons.pylon": "Flux Pylon",
   "container.fluxpylons.pipe": "Dynamic Conduit",
   "container.fluxpylons.adv_pipe": "Advanced Dynamic Conduit",
@@ -59,6 +61,7 @@
   "info.fluxpylons.crate": "Simple storage crate",
   "info.fluxpylons.smelter": "Allows for smelting of special alloys",
   "info.fluxpylons.washer": "Washes minerals with a chance for by-products",
+  "info.fluxpylons.boiler": "Turns water into steam with heat",
   "info.fluxpylons.wrench": "Use on conduits to disable connections and sneak while using to remove conduits instantly",
   "info.fluxpylons.pipe": "Basic dynamic conduit capable of moving items, fluids and energy simultaneously!",
   "info.fluxpylons.adv_pipe": "Advanced dynamic conduit capable of moving items, fluids and energy simultaneously!",
@@ -67,11 +70,16 @@
   "info.fluxpylons.upgrade_filter": "Allows filtering the allowed items on conduit connections",
   "info.fluxpylons.upgrade_retriever": "Allows item extraction from remote inventories into the connected inventory",
   "info.fluxpylons.upgrade_fluid_retriever": "Allows fluid extraction from remote fluid containers into the connected container",
+  "info.fluxpylons.max_temperature": "Max Temperature",
+  "info.fluxpylons.temperature": "Temperature",
+  "info.fluxpylons.celsius": "°C",
 
   "terms.fluxpylons.energy": "Energy",
   "terms.fluxpylons.fluids": "Fluids",
   "terms.fluxpylons.items": "Items",
-  
+
   "terms.fluxpylons.input_slot": "Input slot",
-  "terms.fluxpylons.output_slot": "Output slot"
+  "terms.fluxpylons.output_slot": "Output slot",
+
+  "jei.fluxpylons.boiler_fuel": "Boiler Fuel"
 }

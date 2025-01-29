@@ -8,6 +8,7 @@ import com.joelcrosby.fluxpylons.crate.CrateGui;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.BasicFilterGui;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.FluidFilterGui;
 import com.joelcrosby.fluxpylons.item.upgrade.filter.TagFilterGui;
+import com.joelcrosby.fluxpylons.machine.BoilerGui;
 import com.joelcrosby.fluxpylons.machine.SmelterGui;
 import com.joelcrosby.fluxpylons.machine.WasherGui;
 import com.joelcrosby.fluxpylons.pipe.PipeRenderer;
@@ -45,6 +46,7 @@ public final class Client {
         event.register(FluxPylonsContainerMenus.UPGRADE_TAG_FILTER_CONTAINER_MENU.get(), TagFilterGui::new);
         event.register(FluxPylonsContainerMenus.SMELTER_CONTAINER_MENU.get(), SmelterGui::new);
         event.register(FluxPylonsContainerMenus.WASHER_CONTAINER_MENU.get(), WasherGui::new);
+        event.register(FluxPylonsContainerMenus.BOILER_CONTAINER_MENU.get(), BoilerGui::new);
     }
 
     @SubscribeEvent

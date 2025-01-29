@@ -68,11 +68,10 @@ public class PylonBlockEntity extends BlockEntity {
         if (level != null && !level.isClientSide && !unloaded) {
             var manager = PylonNetworkManager.get(level);
 
-            var node = manager.getNode(worldPosition);
+            var pipe = manager.getNode(worldPosition);
 
-            if (node != null) {
+            if (pipe != null)
                 manager.removeNode(worldPosition);
-            }
         }
     }
 
@@ -80,11 +79,7 @@ public class PylonBlockEntity extends BlockEntity {
     public void clearRemoved() {
         super.clearRemoved();
 
-        if (level == null) {
-            return;
-        }
-
-        if (level.isClientSide) {
+        if (level == null || level.isClientSide) {
             return;
         }
 

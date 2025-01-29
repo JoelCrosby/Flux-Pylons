@@ -138,22 +138,6 @@ public class Utility {
         }
     }
 
-    public static void addTooltip(String name, List<Component> textComponents, List<Component> tooltip) {
-        if (Screen.hasShiftDown()) {
-            var content = I18n.get("info." + FluxPylons.ID + "." + name).split("\n");
-            for (var s : content)
-                tooltip.add(Component.translatable(s).setStyle(Style.EMPTY.applyFormat(ChatFormatting.DARK_PURPLE)));
-        } else {
-            tooltip.addAll(textComponents);
-            tooltip.add(Component.translatable("info." + FluxPylons.ID + ".hold").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(" "))
-                    .append(Component.translatable("info." + FluxPylons.ID + ".shift").withStyle(ChatFormatting.AQUA)
-                            .append(Component.literal(" "))
-                            .append(Component.translatable("info." + FluxPylons.ID + ".more_info").withStyle(ChatFormatting.GRAY)
-            )));
-        }
-    }
-
     public static List<Component> tankTooltip(FluidStack fluidStack, int tankCapacity) {
         var amount = fluidStack.getAmount();
         var name = fluidStack.getDescriptionId();
@@ -172,30 +156,8 @@ public class Utility {
         return tooltip;
     }
 
-    public static List<String> TagToStringList(ListTag nbtList) {
-        var list = new ArrayList<String>();
-
-        for (int i = 0; i < nbtList.size(); i++) {
-            CompoundTag tag = nbtList.getCompound(i);
-            list.add(tag.getString("list"));
-        }
-
-        return list;
-    }
-
     public static boolean inBounds(int x, int y, int w, int h, double ox, double oy) {
         return ox >= x && ox <= x + w && oy >= y && oy <= y + h;
-    }
-
-    public static <T> T getIndex(Set<T> set, int index) {
-        var i = 0;
-
-        for (T entry:set) {
-            if (index == i) return entry;
-            i++;
-        }
-
-        return null;
     }
 
     public static boolean matchesFilterInventory(IItemHandler inventory, ItemStack itemStack, boolean matchNbt) {
@@ -242,16 +204,7 @@ public class Utility {
         boolean mergeItemStack(ItemStack stack, int startIndex, int endIndex, boolean reverseDirection);
     }
 
-    public static VoxelShape rotateShape(Direction from, Direction to, VoxelShape shape) {
-        VoxelShape[] buffer = new VoxelShape[]{ shape, Shapes.empty() };
-
-        int times = (to.getStepZ() - from.getStepZ() + 4) % 4;
-        for (int i = 0; i < times; i++) {
-            buffer[0].forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> buffer[1] = Shapes.or(buffer[1], Shapes.create(1-maxZ, minY, minX, 1-minZ, maxY, maxX)));
-            buffer[0] = buffer[1];
-            buffer[1] = Shapes.empty();
-        }
-
-        return buffer[0];
+    public static boolean isHovering(int x, int y, int width, int height, double mouseX, double mouseY) {
+        return mouseX >= (double)(x - 1) && mouseX < (double)(x + width + 1) && mouseY >= (double)(y - 1) && mouseY < (double)(y + height + 1);
     }
 }

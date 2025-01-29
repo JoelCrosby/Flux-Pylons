@@ -8,8 +8,6 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void renderLevelStageEvent(RenderLevelStageEvent event) {
-        // TODO: migrate from RenderLevelLastEvent
-
         DelayedRenderer.render(event.getPoseStack());
     }
 }

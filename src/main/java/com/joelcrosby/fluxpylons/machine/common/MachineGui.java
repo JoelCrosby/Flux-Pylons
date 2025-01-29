@@ -33,14 +33,15 @@ public abstract class MachineGui<T extends MachineContainerMenu<E>, E extends Ma
 
     @Override
     protected void renderTooltip(GuiGraphics gui, int mouseX, int mouseY) {
-        if (isHovering(9, 7, 16, 42, mouseX, mouseY)) {
-            var storage = tile.getEnergy();
-            var formatter = new DecimalFormat("#,###");
-            var stored = formatter.format(storage.getEnergyStored());
-            var max = formatter.format(storage.getMaxEnergyStored());
+        tile.getEnergyStorage().ifPresent(energy -> {
+            if (isHovering(9, 7, 16, 42, mouseX, mouseY)) {
+                var formatter = new DecimalFormat("#,###");
+                var stored = formatter.format(energy.getEnergyStored());
+                var max = formatter.format(energy.getMaxEnergyStored());
 
-            gui.renderTooltip(this.font, Component.nullToEmpty(stored + " FE / " + max + " FE"), mouseX, mouseY);
-        }
+                gui.renderTooltip(this.font, Component.nullToEmpty(stored + " FE / " + max + " FE"), mouseX, mouseY);
+            }
+        });
 
         super.renderTooltip(gui, mouseX, mouseY);
     }

@@ -1,15 +1,11 @@
 package com.joelcrosby.fluxpylons.setup;
 
 import com.joelcrosby.fluxpylons.FluxPylons;
-import com.joelcrosby.fluxpylons.pipe.IPipeConnectable;
-import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -23,10 +19,8 @@ public class Common {
             .title(Component.literal("Flux Pylons"))
             .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
             .icon(() -> new ItemStack(WRENCH))
-            .displayItems((parameters, output) -> {
-                ITEM_REGISTRY.getEntries().forEach(e -> {
-                    var item = e.get();
-                    output.accept(item);
-                });
-            }).build());
+            .displayItems((parameters, output) -> ITEM_REGISTRY.getEntries().forEach(e -> {
+                var item = e.get();
+                output.accept(item);
+            })).build());
 }

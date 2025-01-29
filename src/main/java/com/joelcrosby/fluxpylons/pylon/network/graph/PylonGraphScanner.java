@@ -85,7 +85,7 @@ public class PylonGraphScanner {
                 var key = request.getParent().getPos();
                 var value = node.getPos();
 
-                if(connections.containsKey(key))
+                if (connections.containsKey(key))
                 {
                     connections.get(key).add(value);
                 }
@@ -130,7 +130,7 @@ public class PylonGraphScanner {
                     if (targetBlock instanceof PylonBlock) {
                         var targetFacing = targetBlockState.getValue(BlockStateProperties.FACING);
 
-                        if (targetFacing == facing && targetFacing == dir) {
+                        if (targetFacing == facing) {
                             continue;
                         }
 
@@ -166,21 +166,21 @@ public class PylonGraphScanner {
 
             var energyCap = BlockCapabilityCache.create(
                     Capabilities.ItemHandler.BLOCK,
-                    (ServerLevel) request.getLevel(),
+                    request.getLevel(),
                     pos,
                     facingDirection
             );
 
             var fluidCap = BlockCapabilityCache.create(
                     Capabilities.FluidHandler.BLOCK,
-                    (ServerLevel) request.getLevel(),
+                    request.getLevel(),
                     pos,
                     facingDirection
             );
 
             var itemCap = BlockCapabilityCache.create(
                     Capabilities.ItemHandler.BLOCK,
-                    (ServerLevel) request.getLevel(),
+                    request.getLevel(),
                     pos,
                     facingDirection
             );

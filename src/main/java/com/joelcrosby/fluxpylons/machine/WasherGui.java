@@ -48,13 +48,17 @@ public class WasherGui extends MachineGui<WasherContainerMenu, WasherBlockEntity
         gui.blit(TEXTURE, i + 89, j + 34, 176, 0, progress, 17);
         gui.blit(TEXTURE, i + 9, j + (7 + (44 - power)), 176, 17 + (44 - power), 14, power);
 
-        TankRenderer.renderGuiTank(tile.getFluidStack(), tile.getFluidTankCapacity(), i + 42, j + 19, 0, 16, 47);
+        tile.getFluidStack().ifPresent(fluidStack -> {
+            TankRenderer.renderGuiTank(fluidStack, tile.getFluidTankCapacity(), i + 42, j + 19, 0, 16, 47);
+        });
     }
 
     @Override
     protected void renderTooltip(GuiGraphics gui, int mouseX, int mouseY) {
         if (isHovering(42, 19, 16, 47, mouseX, mouseY)) {
-            gui.renderTooltip(this.font, Utility.tankTooltip(tile.getFluidStack(), tile.getFluidTankCapacity()), Optional.empty(), mouseX, mouseY);
+            tile.getFluidStack().ifPresent(fluidStack -> {
+                gui.renderTooltip(this.font, Utility.tankTooltip(fluidStack, tile.getFluidTankCapacity()), Optional.empty(), mouseX, mouseY);
+            });
         }
 
         super.renderTooltip(gui, mouseX, mouseY);

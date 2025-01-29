@@ -1,6 +1,7 @@
 package com.joelcrosby.fluxpylons;
 
 import com.joelcrosby.fluxpylons.crate.CrateBlock;
+import com.joelcrosby.fluxpylons.machine.BoilerBlock;
 import com.joelcrosby.fluxpylons.machine.SmelterBlock;
 import com.joelcrosby.fluxpylons.machine.WasherBlock;
 import com.joelcrosby.fluxpylons.pipe.PipeBlock;
@@ -35,6 +36,9 @@ public class FluxPylonsBlocks
 
     public static final DeferredHolder<Block, WasherBlock> WASHER = BLOCKS.register("washer", WasherBlock::new);
     public static final DeferredHolder<Item, BlockItem> WASHER_ITEM = fromBlock(WASHER);
+
+    public static final DeferredHolder<Block, BoilerBlock> BOILER = BLOCKS.register("boiler", BoilerBlock::new);
+    public static final DeferredHolder<Item, BlockItem> BOILER_ITEM = fromBlock(BOILER);
 
     public static <B extends Block> DeferredHolder<Item, BlockItem> fromBlock(DeferredHolder<Block, B> block) {
         return FluxPylonsItems.ITEM_REGISTRY.register(block.getId().getPath(), () -> new BlockItem(block.get(), new Item.Properties()));

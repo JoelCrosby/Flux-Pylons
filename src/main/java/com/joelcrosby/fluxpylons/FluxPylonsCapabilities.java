@@ -30,8 +30,9 @@ public class FluxPylonsCapabilities {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.CRATE.get(), (e, d) -> e.items);
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.WASHER.get(), (e, d) -> e.getCapabilityHandler().getItemHandlerCapability());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.SMELTER.get(), (e, d) -> e.getCapabilityHandler().getItemHandlerCapability());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, FluxPylonsBlockEntities.BOILER.get(), (e, d) -> e.getCapabilityHandler().getItemHandlerCapability());
 
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, FluxPylonsBlockEntities.WASHER.get(), (e, d) -> e.getCapabilityHandler().fluids());
-
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, FluxPylonsBlockEntities.BOILER.get(), (e, d) -> e.getCapabilityHandler().fluids());
     }
 }

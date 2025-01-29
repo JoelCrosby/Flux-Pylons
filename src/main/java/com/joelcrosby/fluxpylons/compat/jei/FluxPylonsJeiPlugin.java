@@ -3,10 +3,13 @@ package com.joelcrosby.fluxpylons.compat.jei;
 import com.joelcrosby.fluxpylons.FluxPylons;
 import com.joelcrosby.fluxpylons.FluxPylonsBlocks;
 import com.joelcrosby.fluxpylons.FluxPylonsItems;
+import com.joelcrosby.fluxpylons.compat.jei.category.BoilerCategory;
 import com.joelcrosby.fluxpylons.compat.jei.category.SmeltingCategory;
 import com.joelcrosby.fluxpylons.compat.jei.category.WashingCategory;
+import com.joelcrosby.fluxpylons.compat.jei.container.BoilerContainerHandler;
 import com.joelcrosby.fluxpylons.compat.jei.container.SmelterContainerHandler;
 import com.joelcrosby.fluxpylons.compat.jei.container.WasherContainerHandler;
+import com.joelcrosby.fluxpylons.machine.BoilerGui;
 import com.joelcrosby.fluxpylons.machine.SmelterGui;
 import com.joelcrosby.fluxpylons.machine.WasherGui;
 import mezz.jei.api.IModPlugin;
@@ -71,24 +74,28 @@ public class FluxPylonsJeiPlugin implements IModPlugin {
 
         registration.addRecipeCategories(new SmeltingCategory(guiHelper));
         registration.addRecipeCategories(new WashingCategory(guiHelper));
+        registration.addRecipeCategories(new BoilerCategory(guiHelper));
     }
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
         registration.addRecipes(SmeltingCategory.RECIPE_TYPE.get(), SmeltingCategory.getAllRecipes());
         registration.addRecipes(WashingCategory.RECIPE_TYPE.get(), WashingCategory.getAllRecipes());
+        registration.addRecipes(BoilerCategory.RECIPE_TYPE.get(), BoilerCategory.getAllRecipes());
     }
 
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addGuiContainerHandler(SmelterGui.class, new SmelterContainerHandler());
         registration.addGuiContainerHandler(WasherGui.class, new WasherContainerHandler());
+        registration.addGuiContainerHandler(BoilerGui.class, new BoilerContainerHandler());
     }
 
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         registration.addRecipeCatalyst(new ItemStack(FluxPylonsBlocks.SMELTER.get()).copy(), SmeltingCategory.RECIPE_TYPE.get());
         registration.addRecipeCatalyst(new ItemStack(FluxPylonsBlocks.WASHER.get()).copy(), WashingCategory.RECIPE_TYPE.get());
+        registration.addRecipeCatalyst(new ItemStack(FluxPylonsBlocks.BOILER.get()).copy(), BoilerCategory.RECIPE_TYPE.get());
     }
 
 
